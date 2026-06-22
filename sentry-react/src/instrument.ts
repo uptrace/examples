@@ -43,4 +43,9 @@ Sentry.init({
 
   // An attribute on every event, so you can filter this example's data.
   environment: 'development',
+
+  // Uptrace derives the service from the release, splitting on the last "@":
+  // "<service.name>@<service.version>". Without it every span lands under
+  // "unknown_service".
+  release: 'sentry-react@1.0.0',
 })
