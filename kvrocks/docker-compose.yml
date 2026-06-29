@@ -1,0 +1,8 @@
+# Kvrocks server used by the example. Telemetry is sent to Uptrace Cloud,
+# so no local Uptrace stack is required here.
+services:
+  kvrocks:
+    image: apache/kvrocks:latest
+    restart: on-failure
+    ports:
+      - '6666:6666'

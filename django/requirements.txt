@@ -1,0 +1,5 @@
+uptrace==1.41.0
+django==5.2.7
+opentelemetry-instrumentation-logging==0.62b0
+opentelemetry-instrumentation-django==0.62b0
+opentelemetry-instrumentation-sqlite3==0.62b0

@@ -1,0 +1,15 @@
+Name: api-api
+Host: 0.0.0.0
+Port: 8888
+
+Telemetry:
+  Name: api-api
+  Sampler: 1.0
+  # go-zero's otlpgrpc batcher always dials insecurely, which can't reach
+  # Uptrace Cloud over TLS. Use the otlphttp batcher with OtlpHttpSecure instead.
+  Batcher: otlphttp
+  Endpoint: api.uptrace.dev
+  OtlpHttpPath: /v1/traces
+  OtlpHttpSecure: true
+  OtlpHeaders:
+    uptrace-dsn: https://<token>@api.uptrace.dev/<project_id>
