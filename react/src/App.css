@@ -1,0 +1,271 @@
+.app {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 8vh, 5rem) 1.25rem 4rem;
+}
+
+/* Masthead -------------------------------------------------------------- */
+
+.masthead h1 {
+  margin: 0;
+  font-size: 2.25rem;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* Composer -------------------------------------------------------------- */
+
+.composer {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.composer input {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+
+.composer input::placeholder {
+  color: var(--faint);
+}
+
+.composer input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ghost);
+}
+
+/* Buttons --------------------------------------------------------------- */
+
+.btn {
+  padding: 0.6rem 1rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 560;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease),
+    transform 0.08s var(--ease);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  color: var(--on-accent);
+  background: var(--accent);
+}
+
+.btn-primary:hover {
+  background: var(--accent-strong);
+}
+
+.btn-quiet {
+  color: var(--ink);
+  background: var(--raised);
+  border-color: var(--line-strong);
+}
+
+.btn-quiet:hover {
+  border-color: var(--ink);
+}
+
+.btn-danger {
+  color: var(--danger);
+  background: transparent;
+  border-color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: var(--danger-tint);
+}
+
+/* Toolbar: count, filters, clear --------------------------------------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.75rem 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+.count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.filters {
+  display: flex;
+  gap: 0.125rem;
+  margin-left: auto;
+  padding: 0.15rem;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+
+.filter {
+  padding: 0.25rem 0.6rem;
+  font: inherit;
+  font-size: 0.82rem;
+  text-transform: capitalize;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: color 0.15s var(--ease), background 0.15s var(--ease);
+}
+
+.filter:hover {
+  color: var(--ink);
+}
+
+.filter[aria-pressed='true'] {
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 1px 2px oklch(0.27 0.018 60 / 0.08);
+}
+
+.btn-text {
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--muted);
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  cursor: pointer;
+  transition: color 0.15s var(--ease);
+}
+
+.btn-text:hover:not(:disabled) {
+  color: var(--danger);
+}
+
+.btn-text:disabled {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+
+/* Todo list ------------------------------------------------------------- */
+
+.todos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.todo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--line);
+  animation: enter 0.22s var(--ease);
+}
+
+.todo label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 1;
+  cursor: pointer;
+}
+
+.todo input[type='checkbox'] {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.todo label.done span {
+  color: var(--faint);
+  text-decoration: line-through;
+}
+
+.remove {
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--faint);
+  background: none;
+  border: none;
+  padding: 0.2rem 0.3rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: color 0.15s var(--ease), opacity 0.15s var(--ease);
+}
+
+.todo:hover .remove,
+.remove:focus-visible {
+  opacity: 1;
+}
+
+.remove:hover {
+  color: var(--danger);
+}
+
+.empty {
+  padding: 1.5rem 0;
+  color: var(--faint);
+  font-size: 0.9rem;
+}
+
+/* Demo section ---------------------------------------------------------- */
+
+.demo {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.demo h2 {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.demo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.82rem;
+  color: var(--faint);
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
