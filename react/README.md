@@ -9,9 +9,12 @@ Uptrace project.
 You'll be able to:
 
 - click around a todo list and generate **breadcrumbs**,
-- press a button to throw an **error** (of a few different types) that shows up in Uptrace,
+- press a button to report an **error** (of a few different types) that shows up in Uptrace,
 - press a button to send a **log message** at a chosen level,
 - press a button to run a traced task and see the resulting **spans / trace**.
+
+Each demo button prints its trace id to the browser console and, if you set
+`VITE_UPTRACE_URL`, shows a link straight to that trace in Uptrace.
 
 ## How it works
 
@@ -51,6 +54,8 @@ http://project2_secret_token@localhost:14318/2
 # from this directory: examples/react
 cp .env.example .env
 # then edit .env and paste your DSN into VITE_SENTRY_DSN
+# optionally set VITE_UPTRACE_URL to your Uptrace UI (e.g. http://localhost:5000)
+# to get clickable trace links
 
 npm install
 npm run dev
@@ -67,8 +72,11 @@ In the app:
 - Click **Run traced task** — runs a span with two child spans.
 - Click **Send log message** — sends a log message at a random level
   (info / warning / error).
-- Click **Throw test error** — throws an uncaught error that Sentry captures.
+- Click **Throw test error** — raises an error (caught and reported with
+  `captureException`) so its trace is linkable.
 
+Each click runs in its own trace, prints `[uptrace] … sent on trace <id>` to the
+console, and shows a **view in Uptrace** link (when `VITE_UPTRACE_URL` is set).
 The last two buttons pick from a small pool each click, so repeated clicks
 produce a variety of messages and error types in Uptrace. The SDK sends events
 over the network as you interact. (Open your browser's devtools Network tab and

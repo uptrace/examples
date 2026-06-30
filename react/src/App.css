@@ -62,8 +62,13 @@
     transform 0.08s var(--ease);
 }
 
-.btn:active {
+.btn:active:not(:disabled) {
   transform: translateY(1px);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .btn-primary {
@@ -71,7 +76,7 @@
   background: var(--accent);
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: var(--accent-strong);
 }
 
@@ -171,6 +176,21 @@
   padding: 0;
 }
 
+/* Past ~10 rows the list becomes a scrollable panel so the content below it
+   (the activity feed) stays in place instead of being pushed down. */
+.todos--scroll {
+  max-height: 29rem;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding: 0 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.todos--scroll .todo:last-child {
+  border-bottom: none;
+}
+
 .todo {
   display: flex;
   align-items: center;
@@ -253,6 +273,83 @@
 .hint {
   margin: 0.75rem 0 0;
   font-size: 0.82rem;
+  color: var(--faint);
+}
+
+.feed {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0 0.85rem;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.feed__row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--line);
+  animation: enter 0.24s var(--ease);
+  /* The dot color follows the signal kind. */
+  --signal: var(--accent);
+}
+
+.feed__row:first-child {
+  border-top: none;
+}
+
+.feed__row[data-kind='log'] {
+  --signal: var(--info);
+}
+
+.feed__row[data-kind='error'] {
+  --signal: var(--danger);
+}
+
+.feed__dot {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--signal);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--signal) 18%, transparent);
+}
+
+.feed__label {
+  flex: none;
+  font-size: 0.82rem;
+  font-weight: 560;
+  color: var(--ink);
+}
+
+.feed__id {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.feed__cta {
+  flex: none;
+  font-size: 0.8rem;
+  font-weight: 560;
+  white-space: nowrap;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.feed__cta:hover {
+  text-decoration: underline;
+}
+
+.feed__hint {
+  flex: none;
+  font-size: 0.76rem;
   color: var(--faint);
 }
 
