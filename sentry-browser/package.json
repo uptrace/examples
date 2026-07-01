@@ -1,0 +1,15 @@
+{
+  "name": "sentry-browser",
+  "version": "1.0.0",
+  "description": "Using @sentry/browser with Uptrace",
+  "type": "module",
+  "main": "main.mjs",
+  "scripts": {
+    "start": "node main.mjs"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@sentry/browser": "^10.62.0"
+  }
+}

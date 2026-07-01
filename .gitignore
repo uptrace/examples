@@ -1,0 +1,23 @@
+# Node.js
+node_modules/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Compiled Go binaries (named after their directory)
+go-slog/go-slog
+sentry-go/sentry-go
+gin-gorm/gin-gorm
+kvrocks/kvrocks
+go-zero/go-zero
+
+# Databases generated at runtime
+*.sqlite3
+db.sqlite3
+gorm.db
+
+# Misc
+.DS_Store
