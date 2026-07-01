@@ -1,6 +1,6 @@
 # React + Sentry example
 
-Rules here apply to `examples/react`, one of the `uptrace/examples` projects:
+Rules here apply to `examples/sentry-react`, one of the `uptrace/examples` projects:
 small, runnable apps that show how to send data to Uptrace. This one shows how
 to integrate the Sentry SDK (`@sentry/react`) with a React frontend reporting to
 Uptrace, and that is the one thing it teaches. Keep it minimal: an example is

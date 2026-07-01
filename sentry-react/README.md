@@ -51,7 +51,7 @@ http://project2_secret_token@localhost:14318/2
 ## 2. Configure and run
 
 ```bash
-# from this directory: examples/react
+# from this directory: examples/sentry-react
 cp .env.example .env
 # then edit .env and paste your DSN into VITE_SENTRY_DSN
 # optionally set VITE_UPTRACE_URL to your Uptrace UI (e.g. http://localhost:5000)

@@ -54,7 +54,7 @@ project.
 - [sentry-go](sentry-go) — errors and tracing with sentry-go.
 - [sentry-python](sentry-python) — nested exception chains with sentry-python.
 - [sentry-browser](sentry-browser) — events with @sentry/browser.
-- [react](react) — errors, breadcrumbs, and tracing with @sentry/react in a todo app.
+- [sentry-react](sentry-react) — errors, breadcrumbs, and tracing with @sentry/react in a todo app.
 
 ### Logs, Collector, and demos
 
