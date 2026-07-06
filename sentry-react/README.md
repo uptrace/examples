@@ -69,11 +69,15 @@ In the app:
 
 - **Add / toggle / delete / filter** a few todos — each action records a
   breadcrumb, so the error you trigger next has a trail leading up to it.
+  **Adding** and **deleting** also send a structured info **log** carrying the
+  todo's text and id as attributes (`tags_todo_text`, `tags_todo_id`).
 - Click **Run traced task** — runs a span with two child spans.
 - Click **Send log message** — sends a log message at a random level
   (info / warning / error).
-- Click **Throw test error** — raises an error (caught and reported with
-  `captureException`) so its trace is linkable.
+- Click **Throw test error** — simulates a failing backend sync: a single trace
+  that emits an **info**, then a **warning**, then the **error** (a random type,
+  caught and reported with `captureException`), so one trace carries several
+  Logs & Errors records with the breadcrumb trail linking back to them.
 
 Each click runs in its own trace, prints `[uptrace] … sent on trace <id>` to the
 console, and shows a **view in Uptrace** link (when `VITE_UPTRACE_URL` is set).
@@ -86,15 +90,17 @@ the browser.)
 ## 4. See it in Uptrace
 
 - **Errors** — open your project and look under **Errors** / **Logs**. Each
-  click of **Throw test error** sends one of several types (`Error`,
-  `TypeError`, `RangeError`, `TodoSyncError`). Open one to see the stack trace
-  (which runs through the app's `syncTodos` / `buildSyncPayload` frames) and, in
-  the event detail, the **breadcrumbs** (the trail of todo actions that preceded
-  it).
-- **Messages** — the **Send log message** events also appear under
-  **Logs** / **Errors**, tagged with their level.
+  click of **Throw test error** runs a `sync_todos` trace with three records — an
+  info, a warning, and the error (one of `Error`, `TypeError`, `RangeError`,
+  `TodoSyncError`). Open the error to see the stack trace (which runs through the
+  app's `syncTodos` / `buildSyncPayload` frames) and, in the event detail, the
+  **breadcrumbs** (the trail of todo actions that preceded it).
+- **Messages / logs** — **Send log message**, plus the info logs from **adding**
+  and **deleting** todos, appear under **Logs** / **Errors**, tagged with their
+  level. The add / delete logs carry the todo's text and id as `tags_todo_*`
+  attributes.
 - **Traces / spans** — open **Traces & Spans** and look for `run_traced_task`
-  (with `step_one` / `step_two` children) and `add_todo`. The browser tracing
+  (with `step_one` / `step_two` children) and `sync_todos`. The browser tracing
   integration also produces page-load and navigation spans.
 
 If nothing shows up, double-check that `VITE_SENTRY_DSN` is set (the app logs a

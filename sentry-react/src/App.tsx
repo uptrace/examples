@@ -64,18 +64,20 @@ export default function App() {
     }
 
     const id = crypto.randomUUID()
-    // Adding a todo is instrumented like the demo actions: its own trace, with a
-    // link in the result panel. Real app interactions are traced too, not just
-    // the demo buttons.
+    setTodos((prev) => [{ id, text: trimmed, done: false }, ...prev])
+    setText('')
+    breadcrumb(`Added todo "${trimmed}"`)
+    // A real interaction, reported as a structured info log rather than a span:
+    // the entered text and id ride along as queryable attributes (tags_todo_*),
+    // and the breadcrumb trail links back to this log on the trace's Events tab.
+    // startNewTrace gives each add its own trace so repeated adds stay distinct.
     Sentry.startNewTrace(() => {
-      Sentry.startSpan({ name: 'add_todo', op: 'ui.action' }, (span) => {
-        setTodos((prev) => [{ id, text: trimmed, done: false }, ...prev])
-        setText('')
-        breadcrumb(`Added todo "${trimmed}"`)
-        recordTrace(
-          announce('trace', 'Added todo', span.spanContext().traceId, span.spanContext().spanId),
-        )
+      Sentry.captureMessage(`Added todo "${trimmed}"`, {
+        level: 'info',
+        tags: { todo_text: trimmed, todo_id: id },
       })
+      const traceId = Sentry.getCurrentScope().getPropagationContext().traceId
+      recordTrace(announce('log', 'Added todo', traceId))
     })
   }
 
@@ -85,8 +87,20 @@ export default function App() {
   }
 
   function deleteTodo(id: string) {
+    const removed = todos.find((t) => t.id === id)
     setTodos((prev) => prev.filter((t) => t.id !== id))
-    breadcrumb(`Deleted todo ${id}`)
+    breadcrumb(`Deleted todo "${removed?.text ?? id}"`)
+    // Mirror addTodo: report the removal as a structured info log with the todo's
+    // text and id as queryable attributes, on its own trace so the breadcrumb
+    // trail links back to it in Uptrace.
+    Sentry.startNewTrace(() => {
+      Sentry.captureMessage(`Deleted todo "${removed?.text ?? id}"`, {
+        level: 'info',
+        tags: { todo_text: removed?.text ?? '', todo_id: id },
+      })
+      const traceId = Sentry.getCurrentScope().getPropagationContext().traceId
+      recordTrace(announce('log', 'Deleted todo', traceId))
+    })
   }
 
   function clearCompleted() {
@@ -215,10 +229,11 @@ function breadcrumb(message: string) {
   Sentry.addBreadcrumb({ category: 'todo', message, level: 'info' })
 }
 
-// announce logs the trace to the console and returns a link for the UI. Every
-// action shares the page's trace, so we deep-link to this action's own span to
-// land on the right place (the error, the log message, the task).
-function announce(kind: Signal, label: string, traceId: string, spanId: string): TraceLink {
+// announce logs the trace to the console and returns a link for the UI. Span
+// actions deep-link to their own span to land on the right place (the error,
+// the task); a log has no span of its own, so it links to the trace and omits
+// the span id.
+function announce(kind: Signal, label: string, traceId: string, spanId?: string): TraceLink {
   const url = traceUrl(traceId, spanId)
   console.log(
     `[uptrace] ${label} sent on trace ${traceId}`,
@@ -227,13 +242,15 @@ function announce(kind: Signal, label: string, traceId: string, spanId: string):
   return { kind, label, traceId, url }
 }
 
-// traceUrl builds a link to a span within a trace in the Uptrace UI. We use the
-// project-scoped /explore route; the bare /traces/<id> shortcut can 404.
-function traceUrl(traceId: string, spanId: string): string | null {
+// traceUrl builds a link into a trace in the Uptrace UI, optionally deep-linking
+// to a span within it. We use the project-scoped /explore route; the bare
+// /traces/<id> shortcut can 404.
+function traceUrl(traceId: string, spanId?: string): string | null {
   if (!UPTRACE_URL || !PROJECT_ID) {
     return null
   }
-  return `${UPTRACE_URL.replace(/\/+$/, '')}/explore/${PROJECT_ID}/traces/${traceId}/${spanId}`
+  const base = `${UPTRACE_URL.replace(/\/+$/, '')}/explore/${PROJECT_ID}/traces/${traceId}`
+  return spanId ? `${base}/${spanId}` : base
 }
 
 // projectIdFromDsn returns the project id, the last path segment of the DSN
@@ -289,21 +306,31 @@ function sendTestMessage(onTrace: (link: TraceLink) => void) {
   })
 }
 
-// throwTestError simulates a real app operation that fails a few calls deep, so
-// the error reported to Uptrace has app frames in its stack trace (syncTodos ->
-// buildSyncPayload) instead of only the React internals. We catch and report it
-// with captureException (rather than letting it propagate) so the event lands on
-// this trace and we can link to it; a real unhandled error is auto-captured.
+// throwTestError simulates a real backend sync that logs its progress and then
+// fails, so a single trace carries several Logs & Errors records (an info, then
+// a warning, then the error) instead of just one. Each record inherits the
+// breadcrumb trail of the actions before it, so in Uptrace the Events tab links
+// back to every row on the trace. The failure runs a few calls deep (syncTodos
+// -> buildSyncPayload) so the error's stack trace has app frames, not just React
+// internals; we catch and report it with captureException so it lands on this
+// trace and we can link to it.
 function throwTestError(onTrace: (link: TraceLink) => void) {
-  breadcrumb('About to throw a test error')
   Sentry.startNewTrace(() => {
-    Sentry.startSpan({ name: 'throw_test_error', op: 'task' }, (span) => {
+    Sentry.startSpan({ name: 'sync_todos', op: 'task' }, (span) => {
+      breadcrumb('Syncing todos with the backend')
+      Sentry.captureMessage('Syncing todos with the backend', 'info')
+
+      breadcrumb('Sync timed out, retrying')
+      Sentry.captureMessage('Todo sync retried after a timeout', 'warning')
+
+      breadcrumb('Retry failed, giving up')
       try {
         syncTodos()
       } catch (err) {
         Sentry.captureException(err)
       }
-      onTrace(announce('error', 'Error', span.spanContext().traceId, span.spanContext().spanId))
+
+      onTrace(announce('error', 'Sync failed', span.spanContext().traceId, span.spanContext().spanId))
     })
   })
 }
