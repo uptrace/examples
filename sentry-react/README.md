@@ -99,9 +99,11 @@ the browser.)
   and **deleting** todos, appear under **Logs** / **Errors**, tagged with their
   level. The add / delete logs carry the todo's text and id as `tags_todo_*`
   attributes.
-- **Traces / spans** — open **Traces & Spans** and look for `run_traced_task`
-  (with `step_one` / `step_two` children) and `sync_todos`. The browser tracing
-  integration also produces page-load and navigation spans.
+- **Traces / spans** — open **Traces & Spans**. Every action runs in its own
+  span: `run_traced_task` (with `step_one` / `step_two` children), `sync_todos`,
+  `send_log_message`, and `add_todo` / `delete_todo` (each with its info log
+  attached). The browser tracing integration also produces page-load and
+  navigation spans.
 
 If nothing shows up, double-check that `VITE_SENTRY_DSN` is set (the app logs a
 warning in the browser console if it isn't) and that the DSN host matches your
