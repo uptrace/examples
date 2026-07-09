@@ -200,24 +200,11 @@
   animation: enter 0.22s var(--ease);
 }
 
-.todo label {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  flex: 1;
-  cursor: pointer;
-}
-
 .todo input[type='checkbox'] {
   width: 1.05rem;
   height: 1.05rem;
   accent-color: var(--accent);
   cursor: pointer;
-}
-
-.todo label.done span {
-  color: var(--faint);
-  text-decoration: line-through;
 }
 
 .remove {

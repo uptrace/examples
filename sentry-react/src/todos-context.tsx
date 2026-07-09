@@ -1,7 +1,7 @@
 // todos-context.tsx — the in-memory todo list plus the wiring from each action
 // to its Sentry signal. State is useState only; there is no backend. Open todos
 // hold a span in `spans` until they are completed or deleted.
-import { createContext, useCallback, useContext, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Span } from '@sentry/react'
 import {
@@ -110,6 +110,16 @@ export function TodosProvider({ children }: { children: ReactNode }) {
     setFilterState(f)
     breadcrumb(`Filtered by "${f}"`)
   }, [])
+
+  useEffect(() => {
+    // End any still-open spans on unmount so none leak unsent.
+    return () => {
+      for (const span of spans.values()) {
+        endTodoSpan(span, { cancelled: true })
+      }
+      spans.clear()
+    }
+  }, [spans])
 
   const value: TodosValue = {
     todos,
