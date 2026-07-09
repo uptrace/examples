@@ -74,30 +74,6 @@ export function captureTestError(): void {
   Sentry.captureException(pickRandom(ERRORS)())
 }
 
-// syncTodos demonstrates nested wrapping spans. startSpan measures the callback
-// and auto-ends the span; the parent 'sync_todos' has 'serialize' and 'upload'
-// children with real awaited durations. The upload fails part of the time,
-// producing an error attached to the same trace, nested under its span.
-export async function syncTodos(count: number): Promise<void> {
-  breadcrumb(`Syncing ${count} todos`)
-  await Sentry.startSpan(
-    { name: 'sync_todos', op: 'task', attributes: { count } },
-    async () => {
-      await Sentry.startSpan({ name: 'serialize', op: 'task.step' }, () => wait(150))
-      await Sentry.startSpan({ name: 'upload', op: 'task.step' }, async () => {
-        await wait(250)
-        if (Math.random() < 0.5) {
-          throw pickRandom(ERRORS)()
-        }
-      })
-    },
-  ).catch((err) => {
-    // startSpan already marked the spans errored and rethrew; report the error
-    // so it lands on this trace, then swallow it (the UI stays responsive).
-    Sentry.captureException(err)
-  })
-}
-
 // TraceLink is the current trace id plus an optional deep link to it in Uptrace.
 export interface TraceLink {
   traceId: string
@@ -144,9 +120,4 @@ function projectIdFromDsn(dsn: string | undefined): string | null {
 // pickRandom returns a random element of a non-empty array.
 function pickRandom<T>(items: ReadonlyArray<T>): T {
   return items[Math.floor(Math.random() * items.length)]
-}
-
-// wait resolves after `ms` milliseconds, standing in for real async work.
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
 }

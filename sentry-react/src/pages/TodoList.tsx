@@ -1,11 +1,11 @@
-// TodoList is the main route (`/`): compose, list, filter todos, and the two
-// demo buttons. Each todo's text links to its detail route, so clicking it
-// triggers a navigation — and a new navigation trace named `/todo/:id`.
+// TodoList is the main route (`/`): compose, list, filter todos, and the demo
+// button. Each todo's text links to its detail route, so clicking it triggers a
+// navigation — and a new navigation trace named `/todo/:id`.
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTodos } from '../todos-context'
 import type { Filter } from '../todos-context'
-import { captureTestError, syncTodos } from '../telemetry'
+import { captureTestError } from '../telemetry'
 import { TraceBadge } from '../components/TraceBadge'
 import { DeliveryStatus } from '../components/DeliveryStatus'
 
@@ -104,17 +104,14 @@ export function TodoList() {
       <section className="demo" aria-labelledby="demo-heading">
         <h2 id="demo-heading">Send data to Uptrace</h2>
         <div className="demo-actions">
-          <button className="btn btn-quiet" onClick={() => syncTodos(todos.length)}>
-            Sync todos
-          </button>
           <button className="btn btn-danger" onClick={captureTestError}>
             Throw test error
           </button>
         </div>
         <p className="hint">
-          Adding, completing and deleting todos emit spans and logs on this page's trace. Sync
-          runs nested spans; the error button reports an exception. All of them share the current
-          trace — it changes only when you reload or open a todo.
+          Adding, completing and deleting todos emit spans and logs on this page's trace. The
+          error button reports an exception. All of them share the current trace — it changes
+          only when you reload or open a todo.
         </p>
         <TraceBadge />
         <DeliveryStatus />

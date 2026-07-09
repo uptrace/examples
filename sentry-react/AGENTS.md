@@ -29,9 +29,8 @@ behavior changes, update it in the same change.
 - Every user action (add / complete / delete / reopen / filter) leaves a Sentry
   breadcrumb; keep that going for new actions. Some also carry a signal: add
   opens a `todo.open` span and emits a log, complete ends the span, delete ends
-  the span (tagged `cancelled` if still open) and emits a log. The demo buttons
-  on `TodoList` emit telemetry beyond that: **Sync todos** runs nested spans
-  (and occasionally an exception), **Throw test error** reports an exception.
+  the span (tagged `cancelled` if still open) and emits a log. The **Throw test
+  error** button on `TodoList` reports an exception on the current trace.
   Document any new button in the README. Hard rule: never call
   `Sentry.startNewTrace()` — traces come only from the pageload/navigation
   tracing integration in `instrument.ts`; everything else attaches to whichever

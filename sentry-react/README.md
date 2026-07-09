@@ -11,7 +11,6 @@ You'll be able to:
 - add / complete / delete todos and watch **spans** and **logs** attach to the
   current trace,
 - open a todo to **navigate** and see a new navigation trace (`/todo/:id`),
-- press **Sync todos** to run **nested spans**,
 - press **Throw test error** to report an **error** (a few different types) on
   the current trace,
 - watch a live **delivery-status** line show whether the most recent envelope
@@ -85,9 +84,6 @@ In the app:
   ends its span, tagged `cancelled` if the todo was still open.
 - Click a todo's **text** to open it — this **navigates** to `/todo/:id`,
   which starts a new navigation trace. Watch the trace badge's id change.
-- Click **Sync todos** — runs a `sync_todos` span wrapping nested `serialize`
-  and `upload` child spans with real durations; the upload fails about half the
-  time, reporting a `captureException` on the same trace.
 - Click **Throw test error** — reports a random error (one of `Error`,
   `TypeError`, `RangeError`, `TodoSyncError`) with `captureException` on the
   current trace.
@@ -100,16 +96,14 @@ interact. (Open your browser's devtools Network tab and look for requests to
 ## 4. See it in Uptrace
 
 - **Errors** — open your project and look under **Errors**. You'll see
-  exceptions from **Throw test error** and from failed **Sync todos** uploads
-  (one of `Error`, `TypeError`, `RangeError`, `TodoSyncError`). Open one to see
-  the stack trace and, in the event detail, the **breadcrumbs** (the trail of
-  todo actions that preceded it).
+  exceptions from **Throw test error** (one of `Error`, `TypeError`,
+  `RangeError`, `TodoSyncError`). Open one to see the stack trace and, in the
+  event detail, the **breadcrumbs** (the trail of todo actions that preceded it).
 - **Logs** — the info logs from **adding** and **deleting** todos, sent via the
   Logs API, carry the todo's text and id as attributes.
 - **Traces / spans** — open **Traces & Spans**. Look for `todo.open` spans (one
-  per open todo, duration = time open), `sync_todos` with its `serialize` /
-  `upload` children, and the pageload / navigation spans the browser tracing
-  integration names by route (`/` and `/todo/:id`).
+  per open todo, duration = time open) and the pageload / navigation spans the
+  browser tracing integration names by route (`/` and `/todo/:id`).
 
 If nothing shows up, double-check that `VITE_SENTRY_DSN` is set (the app logs a
 warning in the browser console if it isn't) and that the DSN host matches your
@@ -124,7 +118,7 @@ means the host answered but the DSN key/project is wrong.
 | --- | --- |
 | `src/instrument.ts` | `Sentry.init()` — the only Uptrace-specific wiring — plus the react-router browser-tracing integration and `enableLogs`. |
 | `src/main.tsx` | Imports instrumentation first; wraps the app in `Sentry.ErrorBoundary`. |
-| `src/telemetry.ts` | Every Sentry SDK call the app makes: breadcrumbs, the `todo.open` span, logs, `captureException`, and `syncTodos`'s nested spans. |
+| `src/telemetry.ts` | Every Sentry SDK call the app makes: breadcrumbs, the `todo.open` span, logs, and `captureException`. |
 | `src/todos-context.tsx` | The in-memory todo state and the wiring from each action to its Sentry signal. |
 | `src/pages/TodoList.tsx` | The `/` route: compose, list, filter todos, and the demo buttons. |
 | `src/pages/TodoDetail.tsx` | The `/todo/:id` route, reached by navigating to a todo. |
