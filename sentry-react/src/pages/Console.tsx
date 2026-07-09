@@ -1,4 +1,5 @@
 import { ErrorPanel } from '../components/ErrorPanel'
+import { LogPanel } from '../components/LogPanel'
 import { SpanPanel } from '../components/SpanPanel'
 
 // Console is the home route: a header plus the signal panels (added in later
@@ -12,6 +13,7 @@ export function Console() {
       </header>
       <div className="panels">
         <SpanPanel />
+        <LogPanel />
         <ErrorPanel />
       </div>
     </section>

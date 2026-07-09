@@ -127,3 +127,22 @@ export function endNamedSpan(handle: NamedSpan): void {
   breadcrumb(`Stopped span "${handle.name}" (${durationMs}ms)`)
   push({ kind: 'span', label: handle.name, durationMs, traceId: currentTraceId() })
 }
+
+// LogLevel is the structured-log severities the Logs panel emits.
+export type LogLevel = 'info' | 'warn' | 'error'
+
+// emitLog sends a real structured log via the Sentry Logs API (enabled with
+// enableLogs in instrument.ts). This is NOT captureMessage — logger.* is how
+// Sentry models logs. Attributes ride along as queryable fields.
+export function emitLog(level: LogLevel, message: string): void {
+  breadcrumb(`Log ${level}: ${message}`)
+  const attributes = { source: 'signal-console' }
+  if (level === 'info') {
+    Sentry.logger.info(message, attributes)
+  } else if (level === 'warn') {
+    Sentry.logger.warn(message, attributes)
+  } else {
+    Sentry.logger.error(message, attributes)
+  }
+  push({ kind: 'log', label: message, level, traceId: currentTraceId() })
+}
