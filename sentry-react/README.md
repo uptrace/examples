@@ -8,13 +8,16 @@ Uptrace project.
 
 You'll be able to:
 
-- click around a todo list and generate **breadcrumbs**,
-- press a button to report an **error** (of a few different types) that shows up in Uptrace,
-- press a button to send a **log message** at a chosen level,
-- press a button to run a traced task and see the resulting **spans / trace**.
+- add / complete / delete todos and watch **spans** and **logs** attach to the
+  current trace,
+- open a todo to **navigate** and see a new navigation trace (`/todo/:id`),
+- press **Sync todos** to run **nested spans**,
+- press **Throw test error** to report an **error** (a few different types) on
+  the current trace.
 
-Each demo button prints its trace id to the browser console and, if you set
-`VITE_UPTRACE_URL`, shows a link straight to that trace in Uptrace.
+A **current-trace badge** on every page shows the active trace id and, if you
+set `VITE_UPTRACE_URL`, a link straight to that trace in Uptrace. It changes
+only when you reload or navigate — not on every button click.
 
 ## How it works
 
@@ -24,6 +27,10 @@ Uptrace exposes exactly those endpoints, where the Sentry "key" is your Uptrace
 **project token** and the project id is the final segment of the DSN. So
 instrumentation is just a standard `Sentry.init({ dsn })` — see
 [`src/instrument.ts`](src/instrument.ts).
+
+The app never manually begins a new trace: the react-router tracing integration
+opens a pageload trace on load and a navigation trace on each route change, and every
+span, log, and error attaches to whichever trace is current.
 
 ## Prerequisites
 
@@ -67,43 +74,39 @@ Open the URL Vite prints (default <http://localhost:5173>).
 
 In the app:
 
-- **Add / toggle / delete / filter** a few todos — each action records a
-  breadcrumb, so the error you trigger next has a trail leading up to it.
-  **Adding** and **deleting** also send a structured info **log** carrying the
-  todo's text and id as attributes (`tags_todo_text`, `tags_todo_id`).
-- Click **Run traced task** — runs a span with two child spans.
-- Click **Send log message** — sends a log message at a random level
-  (info / warning / error).
-- Click **Throw test error** — simulates a failing backend sync: a single trace
-  that emits an **info**, then a **warning**, then the **error** (a random type,
-  caught and reported with `captureException`), so one trace carries several
-  Logs & Errors records with the breadcrumb trail linking back to them.
+- **Add**, **complete**, and **delete** a few todos. Each action records a
+  breadcrumb. Adding opens an inactive `todo.open` span held until the todo is
+  completed or deleted (its duration measures how long the todo stayed open),
+  plus a structured info **log** (via the Sentry Logs API) carrying the todo's
+  text and id. Completing ends the span; deleting an open todo ends it tagged
+  `cancelled` and sends a delete log.
+- Click a todo's **text** to open it — this **navigates** to `/todo/:id`,
+  which starts a new navigation trace. Watch the trace badge's id change.
+- Click **Sync todos** — runs a `sync_todos` span wrapping nested `serialize`
+  and `upload` child spans with real durations; the upload fails about half the
+  time, reporting a `captureException` on the same trace.
+- Click **Throw test error** — reports a random error (one of `Error`,
+  `TypeError`, `RangeError`, `TodoSyncError`) with `captureException` on the
+  current trace.
 
-Each click runs in its own trace, prints `[uptrace] … sent on trace <id>` to the
-console, and shows a **view in Uptrace** link (when `VITE_UPTRACE_URL` is set).
-The last two buttons pick from a small pool each click, so repeated clicks
-produce a variety of messages and error types in Uptrace. The SDK sends events
-over the network as you interact. (Open your browser's devtools Network tab and
-look for requests to `/api/<project_id>/envelope/` to confirm they're leaving
-the browser.)
+Two errors triggered on the same page share a trace id — the id only changes
+when you reload or open a todo. The SDK sends events over the network as you
+interact. (Open your browser's devtools Network tab and look for requests to
+`/api/<project_id>/envelope/` to confirm they're leaving the browser.)
 
 ## 4. See it in Uptrace
 
-- **Errors** — open your project and look under **Errors** / **Logs**. Each
-  click of **Throw test error** runs a `sync_todos` trace with three records — an
-  info, a warning, and the error (one of `Error`, `TypeError`, `RangeError`,
-  `TodoSyncError`). Open the error to see the stack trace (which runs through the
-  app's `syncTodos` / `buildSyncPayload` frames) and, in the event detail, the
-  **breadcrumbs** (the trail of todo actions that preceded it).
-- **Messages / logs** — **Send log message**, plus the info logs from **adding**
-  and **deleting** todos, appear under **Logs** / **Errors**, tagged with their
-  level. The add / delete logs carry the todo's text and id as `tags_todo_*`
-  attributes.
-- **Traces / spans** — open **Traces & Spans**. Every action runs in its own
-  span: `run_traced_task` (with `step_one` / `step_two` children), `sync_todos`,
-  `send_log_message`, and `add_todo` / `delete_todo` (each with its info log
-  attached). The browser tracing integration also produces page-load and
-  navigation spans.
+- **Errors** — open your project and look under **Errors**. You'll see
+  exceptions from **Throw test error** and from failed **Sync todos** uploads
+  (one of `Error`, `TypeError`, `RangeError`, `TodoSyncError`). Open one to see
+  the stack trace and, in the event detail, the **breadcrumbs** (the trail of
+  todo actions that preceded it).
+- **Logs** — the info logs from **adding** and **deleting** todos, sent via the
+  Logs API, carry the todo's text and id as attributes.
+- **Traces / spans** — open **Traces & Spans**. Look for `todo.open` spans (one
+  per open todo, duration = time open), `sync_todos` with its `serialize` /
+  `upload` children, and the pageload / navigation spans the browser tracing
+  integration names by route (`/` and `/todo/:id`).
 
 If nothing shows up, double-check that `VITE_SENTRY_DSN` is set (the app logs a
 warning in the browser console if it isn't) and that the DSN host matches your
@@ -113,7 +116,11 @@ Uptrace ingest address. Restart `npm run dev` after editing `.env`.
 
 | File | Purpose |
 | --- | --- |
-| `src/instrument.ts` | `Sentry.init()` — the only Uptrace-specific wiring. |
+| `src/instrument.ts` | `Sentry.init()` — the only Uptrace-specific wiring — plus the react-router browser-tracing integration and `enableLogs`. |
 | `src/main.tsx` | Imports instrumentation first; wraps the app in `Sentry.ErrorBoundary`. |
-| `src/App.tsx` | The todo UI plus the breadcrumb / error / span demo actions. |
+| `src/telemetry.ts` | Every Sentry SDK call the app makes: breadcrumbs, the `todo.open` span, logs, `captureException`, and `syncTodos`'s nested spans. |
+| `src/todos-context.tsx` | The in-memory todo state and the wiring from each action to its Sentry signal. |
+| `src/pages/TodoList.tsx` | The `/` route: compose, list, filter todos, and the demo buttons. |
+| `src/pages/TodoDetail.tsx` | The `/todo/:id` route, reached by navigating to a todo. |
+| `src/components/TraceBadge.tsx` | Shows the current trace id and, when `VITE_UPTRACE_URL` is set, a link to it. |
 | `.env.example` | Template for the `VITE_SENTRY_DSN` setting. |

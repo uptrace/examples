@@ -11,7 +11,8 @@ behavior changes, update it in the same change.
 
 ## Core Rules
 
-- The only Uptrace-specific code is `Sentry.init()` in `src/instrument.ts`,
+- The only Uptrace-specific code is `Sentry.init()` in `src/instrument.ts`;
+  `src/telemetry.ts` holds the rest of the Sentry SDK usage. `instrument.ts` is
   imported first in `src/main.tsx` (before React) so instrumentation is in place
   before the app renders.
 - The DSN comes from `VITE_SENTRY_DSN`; never hardcode a DSN. `.env` is
@@ -19,11 +20,18 @@ behavior changes, update it in the same change.
 - Uptrace ingests the standard Sentry protocol, so there is no Uptrace exporter
   or adapter. If you reach for one, you are doing it wrong.
 - The app is a small todo list: Vite + React + TypeScript, state in `useState`
-  held in memory only. No router, no backend, no UI framework.
-- Every user action (add / toggle / delete / filter) leaves a Sentry breadcrumb
-  so a reported event carries the trail that led to it; keep that going for new
-  actions. The "Send data to Uptrace" buttons exist only to emit telemetry (a
-  span, a log message, an error). Document any new button in the README.
+  held in memory only. No backend, no UI framework. It does use
+  `react-router-dom` for two routes (`/`, `/todo/:id`) so that navigating
+  between them produces real navigation traces.
+- Every user action (add / complete / delete) leaves a Sentry breadcrumb plus
+  its signal: add opens a `todo.open` span and emits a log, complete ends the
+  span, delete ends the span (tagged `cancelled` if still open) and emits a
+  log; keep that going for new actions. The demo buttons on `TodoList` emit
+  telemetry beyond that: **Sync todos** runs nested spans (and occasionally an
+  exception), **Throw test error** reports an exception. Document any new
+  button in the README. Hard rule: never manually begin a new trace — traces
+  come only from the pageload/navigation tracing integration in
+  `instrument.ts`; everything else attaches to whichever trace is current.
 - TypeScript with `strict` on. JS/TS comments use `//` line comments, including
   comments for exported types and functions.
 - Plain CSS only. Design tokens (OKLCH colors, radius, easing) live in `:root` in
