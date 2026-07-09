@@ -1,11 +1,11 @@
-// Sentry initialization for the browser.
-//
-// This file is imported FIRST in main.tsx (before React) so Sentry installs its
-// instrumentation before the app renders.
+// Sentry initialization for the browser. Imported FIRST in main.tsx so Sentry
+// installs its instrumentation before React renders.
 //
 // The DSN is read from `VITE_SENTRY_DSN`. Copy `.env.example` to `.env` and
 // paste the Sentry DSN from your Uptrace project. See README.md for details.
 import * as Sentry from '@sentry/react'
+import { useEffect } from 'react'
+import { createRoutesFromChildren, matchRoutes, useLocation, useNavigationType } from 'react-router-dom'
 import { makeReportingTransport } from './delivery'
 
 const dsn = import.meta.env.VITE_SENTRY_DSN
@@ -22,28 +22,49 @@ Sentry.init({
   dsn,
 
   // Wrap the standard fetch transport so the UI can show whether each envelope
-  // actually reached the ingest server (see src/delivery.ts and the delivery
-  // status line in the UI). It only observes; it does not change delivery.
+  // actually reached the ingest server (see src/delivery.ts). It only observes.
   transport: makeReportingTransport,
 
-  // browserTracingIntegration opens a pageload trace on load and captures
-  // fetch/XHR and page-load timing spans under it. This is the only place traces
-  // are started — the app never calls startNewTrace; spans/logs/errors attach to
-  // the current page's trace.
-  integrations: [Sentry.browserTracingIntegration()],
+  // React Router v7 tracing: opens a pageload trace on load and a navigation
+  // trace on each route change, named by the parameterized route (/item/:id).
+  // This is the only place traces are started — signals attach to the current
+  // trace; the app never calls startNewTrace.
+  integrations: [
+    Sentry.reactRouterV7BrowserTracingIntegration({
+      useEffect,
+      useLocation,
+      useNavigationType,
+      createRoutesFromChildren,
+      matchRoutes,
+    }),
+  ],
 
-  // Send structured logs (Sentry.logger.*) to Uptrace, used for add/delete.
+  // Send structured logs (Sentry.logger.*) to Uptrace, used by the Logs panel.
   enableLogs: true,
 
   // Sample 100% of traces. Lower this in production; for a demo we want to see
   // every interaction in Uptrace.
   tracesSampleRate: 1.0,
 
-  // Attach a default user/IP so events are easier to find. Turn off if you do
-  // not want to send personally identifiable information.
+  // Attach a default user/IP so events are easier to find. Turn off to avoid PII.
   sendDefaultPii: true,
 
-  // Surfaces as an attribute on every event so you can filter this example's
-  // data in Uptrace.
+  // Surfaces as an attribute on every event so you can filter this example's data.
   environment: 'development',
+})
+
+// Record pageload/navigation transaction event ids so end-to-end tests can
+// assert a new trace was created on navigation.
+Sentry.addEventProcessor(event => {
+  if (
+    event.type === 'transaction' &&
+    (event.contexts?.trace?.op === 'pageload' || event.contexts?.trace?.op === 'navigation')
+  ) {
+    const id = event.event_id
+    if (id) {
+      window.recordedTransactions = window.recordedTransactions || []
+      window.recordedTransactions.push(id)
+    }
+  }
+  return event
 })

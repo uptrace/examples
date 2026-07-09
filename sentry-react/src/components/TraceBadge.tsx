@@ -10,6 +10,7 @@
 // only show the link once delivery has settled on ok.
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import type { ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 import { currentTraceLink } from '../telemetry'
 import type { TraceLink } from '../telemetry'
 import { subscribeDelivery, getDeliverySnapshot } from '../delivery'
@@ -21,10 +22,12 @@ export function TraceBadge() {
   // The last confirmed delivery outcome, ignoring the transient idle/sending.
   const [settled, setSettled] = useState<'ok' | 'failed' | null>(null)
 
+  const location = useLocation()
+
   useEffect(() => {
     const raf = requestAnimationFrame(() => setLink(currentTraceLink()))
     return () => cancelAnimationFrame(raf)
-  }, [])
+  }, [location.key])
 
   useEffect(() => {
     if (delivery.state === 'ok' || delivery.state === 'failed') {
