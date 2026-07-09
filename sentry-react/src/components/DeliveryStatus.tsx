@@ -16,9 +16,9 @@ function message(status: Status): string {
     case 'ok':
       return 'Delivered to Uptrace ✓'
     case 'failed':
-      return status.host
-        ? `Delivery failed — couldn't reach ${status.host} (is it running? DSN correct?)`
-        : "Delivery failed — couldn't reach the ingest server (is it running? DSN correct?)"
+      return status.statusCode
+        ? `Delivery rejected by ${status.host ?? 'the ingest server'} (HTTP ${status.statusCode}) — check the DSN key/project`
+        : `Delivery failed — couldn't reach ${status.host ?? 'the ingest server'} (is it running? DSN correct?)`
   }
 }
 

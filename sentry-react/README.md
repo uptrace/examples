@@ -14,7 +14,7 @@ You'll be able to:
 - press **Sync todos** to run **nested spans**,
 - press **Throw test error** to report an **error** (a few different types) on
   the current trace,
-- watch a live **delivery-status** line show whether each envelope actually
+- watch a live **delivery-status** line show whether the most recent envelope
   reached Uptrace, so you can tell a working setup from a broken one.
 
 A **current-trace badge** on every page shows the active trace id and, if you

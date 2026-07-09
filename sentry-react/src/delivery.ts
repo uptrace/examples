@@ -70,6 +70,9 @@ export function makeReportingTransport(
       try {
         const result = await inner.send(request)
         const code = result?.statusCode
+        // A resolve with no statusCode (or < 400) just means the SDK accepted the
+        // send — e.g. it may have dropped/rate-limited items client-side and
+        // resolved with `{}` — not a hard guarantee the envelope was delivered.
         emit(
           code && code >= 400
             ? { state: 'failed', statusCode: code }
