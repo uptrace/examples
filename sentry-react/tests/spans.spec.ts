@@ -28,3 +28,26 @@ test('an open span is ended if you navigate away before stopping it', async ({ p
   )
   expect(await rec.jsonValue()).toMatchObject({ kind: 'span', label: 'abandoned' })
 })
+
+test('a span record carries a span id and the inspector deep-links to it', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('Span name').fill('linkable')
+  await page.getByRole('button', { name: 'Start span' }).click()
+  await page.getByRole('button', { name: 'Stop span' }).click()
+
+  const rec = (await page.evaluate(() => (window.__signals ?? []).at(-1))) as {
+    kind: string
+    spanId?: string
+    traceId?: string
+  }
+  expect(rec.kind).toBe('span')
+  expect(rec.spanId).toMatch(/^[0-9a-f]{16}$/)
+
+  // .env sets VITE_UPTRACE_URL + a DSN, so the inspector renders a deep link
+  // whose href appends ?span_id= to the trace URL (Uptrace's own span param).
+  const link = page.locator('.inspector a.inspector__link')
+  await expect(link).toHaveAttribute(
+    'href',
+    new RegExp(`/traces/${rec.traceId}\\?span_id=${rec.spanId}$`),
+  )
+})

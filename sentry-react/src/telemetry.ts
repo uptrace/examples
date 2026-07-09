@@ -44,17 +44,20 @@ export function currentTraceLink(): TraceLink | null {
   if (!traceId) {
     return null
   }
-  return { traceId, url: traceUrl(traceId) }
+  return { traceId, url: uptraceUrl(traceId) }
 }
 
-// traceUrl builds a project-scoped link into a trace in the Uptrace UI, or null
-// when the UI URL or project id is unavailable.
-function traceUrl(traceId: string): string | null {
-  if (!UPTRACE_URL || !PROJECT_ID) {
+// uptraceUrl builds a project-scoped link into the Uptrace UI for a trace, and
+// deep-links to a specific span when spanId is given by appending ?span_id=
+// (the query param Uptrace's own SDKs use). Returns null when the UI URL, the
+// project id, or the trace id is unavailable.
+export function uptraceUrl(traceId: string | null, spanId?: string): string | null {
+  if (!UPTRACE_URL || !PROJECT_ID || !traceId) {
     return null
   }
   const base = UPTRACE_URL.replace(/\/+$/, '')
-  return `${base}/explore/${PROJECT_ID}/traces/${traceId}`
+  const url = `${base}/explore/${PROJECT_ID}/traces/${traceId}`
+  return spanId ? `${url}?span_id=${spanId}` : url
 }
 
 // projectIdFromDsn returns the project id, the last path segment of the DSN
@@ -124,8 +127,9 @@ export function startNamedSpan(name: string): NamedSpan {
 export function endNamedSpan(handle: NamedSpan): void {
   handle.span.end()
   const durationMs = Math.round(performance.now() - handle.startedAt)
+  const { spanId } = handle.span.spanContext()
   breadcrumb(`Stopped span "${handle.name}" (${durationMs}ms)`)
-  push({ kind: 'span', label: handle.name, durationMs, traceId: currentTraceId() })
+  push({ kind: 'span', label: handle.name, durationMs, traceId: currentTraceId(), spanId })
 }
 
 // LogLevel is the structured-log severities the Logs panel emits.

@@ -16,6 +16,8 @@ export interface SignalRecord {
   traceId: string | null
   // durationMs is set for spans and http requests (their measured time).
   durationMs?: number
+  // spanId is set for custom spans, so the Inspector can deep-link to that span.
+  spanId?: string
   // level is set for logs.
   level?: 'info' | 'warn' | 'error'
   // errorType is the error kind for errors (e.g. 'RangeError').

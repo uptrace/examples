@@ -232,6 +232,15 @@ body {
   color: var(--accent);
 }
 
+.inspector__link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.inspector__link:hover {
+  text-decoration: underline;
+}
+
 .inspector__trace {
   color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
