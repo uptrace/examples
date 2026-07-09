@@ -7,6 +7,7 @@ import { useTodos } from '../todos-context'
 import type { Filter } from '../todos-context'
 import { captureTestError, syncTodos } from '../telemetry'
 import { TraceBadge } from '../components/TraceBadge'
+import { DeliveryStatus } from '../components/DeliveryStatus'
 
 export function TodoList() {
   const { todos, filter, addTodo, toggleTodo, deleteTodo, clearCompleted, setFilter } = useTodos()
@@ -116,6 +117,7 @@ export function TodoList() {
           trace — it changes only when you reload or open a todo.
         </p>
         <TraceBadge />
+        <DeliveryStatus />
       </section>
     </main>
   )

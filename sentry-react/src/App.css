@@ -357,3 +357,46 @@
 .trace-badge__cta:hover {
   text-decoration: underline;
 }
+
+/* Delivery status ------------------------------------------------------- */
+
+.delivery {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  /* The dot and text color follow the delivery state. */
+  --signal: var(--muted);
+}
+
+.delivery[data-state='sending'] {
+  --signal: var(--info);
+}
+
+.delivery[data-state='ok'] {
+  --signal: oklch(0.6 0.13 150);
+}
+
+.delivery[data-state='failed'] {
+  --signal: var(--danger);
+}
+
+.delivery__dot {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--signal);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--signal) 18%, transparent);
+}
+
+.delivery__text {
+  min-width: 0;
+  color: var(--signal);
+  font-weight: 560;
+}

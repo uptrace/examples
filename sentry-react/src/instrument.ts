@@ -13,6 +13,7 @@ import {
   useLocation,
   useNavigationType,
 } from 'react-router-dom'
+import { makeReportingTransport } from './delivery'
 
 const dsn = import.meta.env.VITE_SENTRY_DSN
 
@@ -26,6 +27,11 @@ if (!dsn) {
 
 Sentry.init({
   dsn,
+
+  // Wrap the standard fetch transport so the UI can show whether each envelope
+  // actually reached the ingest server (see src/delivery.ts and the delivery
+  // status line in the UI). It only observes; it does not change delivery.
+  transport: makeReportingTransport,
 
   // reactRouterV6BrowserTracingIntegration opens a pageload trace on first load
   // and a navigation trace on every route change, each named by the matched

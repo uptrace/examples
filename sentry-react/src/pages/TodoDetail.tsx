@@ -3,6 +3,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { useTodos } from '../todos-context'
 import { TraceBadge } from '../components/TraceBadge'
+import { DeliveryStatus } from '../components/DeliveryStatus'
 
 export function TodoDetail() {
   const { id } = useParams()
@@ -35,6 +36,7 @@ export function TodoDetail() {
       )}
 
       <TraceBadge />
+      <DeliveryStatus />
     </main>
   )
 }
