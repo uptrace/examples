@@ -22,19 +22,17 @@ behavior changes, update it in the same change.
   gitignored — keep `.env.example` as the template and document it in the README.
 - Uptrace ingests the standard Sentry protocol, so there is no Uptrace exporter
   or adapter. If you reach for one, you are doing it wrong.
-- The app is a small todo list: Vite + React + TypeScript, state in `useState`
-  held in memory only. No backend, no UI framework. It does use
-  `react-router-dom` for two routes (`/`, `/todo/:id`) so that navigating
-  between them produces real navigation traces.
+- The app is a small single-page todo list: Vite + React + TypeScript, state in
+  `useState` held in memory only. No router, no backend, no UI framework.
 - Every user action (add / complete / delete / reopen / filter) leaves a Sentry
   breadcrumb; keep that going for new actions. Some also carry a signal: add
   opens a `todo.open` span and emits a log, complete ends the span, delete ends
   the span (tagged `cancelled` if still open) and emits a log. The **Throw test
   error** button on `TodoList` reports an exception on the current trace.
   Document any new button in the README. Hard rule: never call
-  `Sentry.startNewTrace()` — traces come only from the pageload/navigation
-  tracing integration in `instrument.ts`; everything else attaches to whichever
-  trace is current.
+  `Sentry.startNewTrace()` — the trace comes only from the pageload
+  browser-tracing integration in `instrument.ts`; everything else attaches to
+  that trace.
 - TypeScript with `strict` on. JS/TS comments use `//` line comments, including
   comments for exported types and functions.
 - Plain CSS only. Design tokens (OKLCH colors, radius, easing) live in `:root` in

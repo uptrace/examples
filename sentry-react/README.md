@@ -10,15 +10,14 @@ You'll be able to:
 
 - add / complete / delete todos and watch **spans** and **logs** attach to the
   current trace,
-- open a todo to **navigate** and see a new navigation trace (`/todo/:id`),
 - press **Throw test error** to report an **error** (a few different types) on
   the current trace,
 - watch a live **delivery-status** line show whether the most recent envelope
   reached Uptrace, so you can tell a working setup from a broken one.
 
-A **current-trace badge** on every page shows the active trace id and, if you
-set `VITE_UPTRACE_URL`, a link straight to that trace in Uptrace. It changes
-only when you reload or navigate — not on every button click.
+A **current-trace badge** shows the active trace id and, if you set
+`VITE_UPTRACE_URL`, a link straight to that trace in Uptrace. It changes only
+when you reload the page — not on every button click.
 
 ## How it works
 
@@ -29,9 +28,9 @@ Uptrace exposes exactly those endpoints, where the Sentry "key" is your Uptrace
 instrumentation is just a standard `Sentry.init({ dsn })` — see
 [`src/instrument.ts`](src/instrument.ts).
 
-The app never manually begins a new trace: the react-router tracing integration
-opens a pageload trace on load and a navigation trace on each route change, and every
-span, log, and error attaches to whichever trace is current.
+The app never manually begins a new trace: the browser-tracing integration opens
+a pageload trace when the page loads, and every span, log, and error attaches to
+that trace.
 
 ## Prerequisites
 
@@ -82,14 +81,12 @@ In the app:
   plus a structured info **log** (via the Sentry Logs API) carrying the todo's
   text and id. Completing ends the span; deleting a todo sends a delete log and
   ends its span, tagged `cancelled` if the todo was still open.
-- Click a todo's **text** to open it — this **navigates** to `/todo/:id`,
-  which starts a new navigation trace. Watch the trace badge's id change.
 - Click **Throw test error** — reports a random error (one of `Error`,
   `TypeError`, `RangeError`, `TodoSyncError`) with `captureException` on the
   current trace.
 
 Two errors triggered on the same page share a trace id — the id only changes
-when you reload or open a todo. The SDK sends events over the network as you
+when you reload the page. The SDK sends events over the network as you
 interact. (Open your browser's devtools Network tab and look for requests to
 `/api/<project_id>/envelope/` to confirm they're leaving the browser.)
 
@@ -102,8 +99,9 @@ interact. (Open your browser's devtools Network tab and look for requests to
 - **Logs** — the info logs from **adding** and **deleting** todos, sent via the
   Logs API, carry the todo's text and id as attributes.
 - **Traces / spans** — open **Traces & Spans**. Look for `todo.open` spans (one
-  per open todo, duration = time open) and the pageload / navigation spans the
-  browser tracing integration names by route (`/` and `/todo/:id`).
+  per open todo, duration = time open) under the **pageload** trace the browser
+  tracing integration records (along with its page-load timing and fetch/XHR
+  spans).
 
 If nothing shows up, double-check that `VITE_SENTRY_DSN` is set (the app logs a
 warning in the browser console if it isn't) and that the DSN host matches your
@@ -116,12 +114,11 @@ means the host answered but the DSN key/project is wrong.
 
 | File | Purpose |
 | --- | --- |
-| `src/instrument.ts` | `Sentry.init()` — the only Uptrace-specific wiring — plus the react-router browser-tracing integration and `enableLogs`. |
+| `src/instrument.ts` | `Sentry.init()` — the only Uptrace-specific wiring — plus the browser-tracing integration and `enableLogs`. |
 | `src/main.tsx` | Imports instrumentation first; wraps the app in `Sentry.ErrorBoundary`. |
 | `src/telemetry.ts` | Every Sentry SDK call the app makes: breadcrumbs, the `todo.open` span, logs, and `captureException`. |
 | `src/todos-context.tsx` | The in-memory todo state and the wiring from each action to its Sentry signal. |
-| `src/pages/TodoList.tsx` | The `/` route: compose, list, filter todos, and the demo buttons. |
-| `src/pages/TodoDetail.tsx` | The `/todo/:id` route, reached by navigating to a todo. |
+| `src/pages/TodoList.tsx` | The whole UI: compose, list, filter todos, and the demo button. |
 | `src/components/TraceBadge.tsx` | Shows the current trace id and, when `VITE_UPTRACE_URL` is set, a link to it. |
 | `src/delivery.ts` | Wraps the fetch transport to observe delivery outcomes and publishes the delivery status. |
 | `src/components/DeliveryStatus.tsx` | The delivery-status line, shown beside the trace badge. |

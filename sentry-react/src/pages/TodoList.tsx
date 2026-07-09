@@ -1,8 +1,7 @@
-// TodoList is the main route (`/`): compose, list, filter todos, and the demo
-// button. Each todo's text links to its detail route, so clicking it triggers a
-// navigation — and a new navigation trace named `/todo/:id`.
+// TodoList is the whole app: compose, list, filter todos, plus a demo button
+// that reports an error. Every action emits its Sentry signal onto the current
+// page's trace.
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTodos } from '../todos-context'
 import type { Filter } from '../todos-context'
 import { captureTestError } from '../telemetry'
@@ -86,9 +85,7 @@ export function TodoList() {
                 aria-label={`Complete "${todo.text}"`}
                 onChange={() => toggleTodo(todo.id)}
               />
-              <Link to={`/todo/${todo.id}`} className={todo.done ? 'todo__text done' : 'todo__text'}>
-                {todo.text}
-              </Link>
+              <span className={todo.done ? 'todo__text done' : 'todo__text'}>{todo.text}</span>
               <button
                 className="remove"
                 aria-label={`Delete "${todo.text}"`}

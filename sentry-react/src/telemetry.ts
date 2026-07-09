@@ -80,9 +80,9 @@ export interface TraceLink {
   url: string | null
 }
 
-// currentTraceLink reads the trace id of the active root span — the pageload or
-// navigation trace the integration opened — and builds a link to it. Read it
-// right after a navigation, while that idle span is still active.
+// currentTraceLink reads the trace id of the active root span — the pageload
+// trace the browser-tracing integration opened — and builds a link to it. Read
+// it shortly after load, while that idle span is still active.
 export function currentTraceLink(): TraceLink | null {
   const active = Sentry.getActiveSpan()
   const root = active ? Sentry.getRootSpan(active) : undefined

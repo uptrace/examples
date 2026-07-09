@@ -80,16 +80,6 @@
   background: var(--accent-strong);
 }
 
-.btn-quiet {
-  color: var(--ink);
-  background: var(--raised);
-  border-color: var(--line-strong);
-}
-
-.btn-quiet:hover {
-  border-color: var(--ink);
-}
-
 .btn-danger {
   color: var(--danger);
   background: transparent;
@@ -277,42 +267,14 @@
   }
 }
 
-/* Todo text link -------------------------------------------------------- */
+/* Todo text ------------------------------------------------------------- */
 
 .todo__text {
   flex: 1;
   color: var(--ink);
-  text-decoration: none;
-}
-
-.todo__text:hover {
-  text-decoration: underline;
 }
 
 .todo__text.done {
-  color: var(--faint);
-  text-decoration: line-through;
-}
-
-/* Detail page ----------------------------------------------------------- */
-
-.detail__back {
-  color: var(--muted);
-  text-decoration: none;
-  font-size: 0.9rem;
-}
-
-.detail__back:hover {
-  color: var(--ink);
-}
-
-.detail__title {
-  margin: 0.5rem 0 0;
-  font-size: 1.75rem;
-  letter-spacing: -0.02em;
-}
-
-.detail__title.done {
   color: var(--faint);
   text-decoration: line-through;
 }

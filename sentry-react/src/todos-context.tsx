@@ -35,8 +35,8 @@ interface TodosValue {
 
 const TodosContext = createContext<TodosValue | null>(null)
 
-// TodosProvider holds the list so both routes (`/` and `/todo/:id`) share it,
-// and turns each action into the matching Sentry signal.
+// TodosProvider holds the todo list and turns each action into the matching
+// Sentry signal.
 export function TodosProvider({ children }: { children: ReactNode }) {
   const [todos, setTodos] = useState<Todo[]>([])
   const [filter, setFilterState] = useState<Filter>('all')
