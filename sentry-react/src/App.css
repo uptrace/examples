@@ -289,23 +289,27 @@
 .tip::after {
   content: attr(data-tip);
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 8px);
   left: 50%;
-  transform: translateX(-50%);
-  padding: 0.25rem 0.5rem;
-  background: var(--ink);
-  color: var(--paper);
+  padding: 0.3rem 0.55rem;
   font-size: 0.72rem;
+  font-weight: 560;
   white-space: nowrap;
-  border-radius: 5px;
+  color: var(--ink);
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px oklch(0.27 0.018 60 / 0.12);
   opacity: 0;
+  transform: translate(-50%, 4px);
   pointer-events: none;
-  transition: opacity 0.12s var(--ease);
+  transition: opacity 0.16s var(--ease), transform 0.16s var(--ease);
 }
 
 .tip:hover::after,
 .tip:focus-within::after {
   opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 /* Current-trace badge --------------------------------------------------- */
