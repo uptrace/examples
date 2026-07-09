@@ -44,7 +44,7 @@ static `vite preview` build does not include them.
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org) 18 or newer.
+- [Node.js](https://nodejs.org) 20 or newer.
 - A running Uptrace and a project to send data to:
   - **Self-hosted:** [Uptrace get-started guide](https://uptrace.dev/get-started).
     The Sentry ingest host is usually `localhost:14318`.

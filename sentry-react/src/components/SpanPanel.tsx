@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { startNamedSpan, endNamedSpan } from '../telemetry'
 import type { NamedSpan } from '../telemetry'
 
@@ -7,6 +7,22 @@ import type { NamedSpan } from '../telemetry'
 export function SpanPanel() {
   const [name, setName] = useState('')
   const [running, setRunning] = useState<NamedSpan | null>(null)
+
+  // Mirror `running` into a ref so the unmount cleanup sees the latest value
+  // without re-registering the effect (a [running] dep would end the span early
+  // on Stop).
+  const runningRef = useRef<NamedSpan | null>(null)
+  runningRef.current = running
+
+  useEffect(() => {
+    // If the panel unmounts (e.g. navigating away) while a span is still open,
+    // end it so its duration is recorded instead of being silently dropped.
+    return () => {
+      if (runningRef.current) {
+        endNamedSpan(runningRef.current)
+      }
+    }
+  }, [])
 
   return (
     <div className="panel">
