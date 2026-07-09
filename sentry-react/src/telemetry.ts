@@ -146,3 +146,41 @@ export function emitLog(level: LogLevel, message: string): void {
   }
   push({ kind: 'log', label: message, level, traceId: currentTraceId() })
 }
+
+// RequestKind is the three demo endpoints the HTTP panel can call.
+export type RequestKind = 'ok' | 'slow' | 'fail'
+
+// sendRequest fetches a dev endpoint, producing an http.client span on the
+// current trace (the browser-tracing integration instruments fetch). It records
+// its own measured record for the Inspector, and treats a non-OK response as a
+// failure worth capturing as an error too.
+export async function sendRequest(kind: RequestKind): Promise<void> {
+  breadcrumb(`Sending ${kind} request`)
+  const startedAt = performance.now()
+  try {
+    const res = await fetch(`/api/${kind}`)
+    const durationMs = Math.round(performance.now() - startedAt)
+    push({
+      kind: 'http',
+      label: `GET /api/${kind}`,
+      durationMs,
+      detail: `HTTP ${res.status}`,
+      traceId: currentTraceId(),
+    })
+    if (!res.ok) {
+      const err = new Error(`Request to /api/${kind} failed: HTTP ${res.status}`)
+      Sentry.captureException(err)
+      push({ kind: 'error', label: err.message, errorType: 'Error', traceId: currentTraceId() })
+    }
+  } catch (e) {
+    const durationMs = Math.round(performance.now() - startedAt)
+    Sentry.captureException(e)
+    push({
+      kind: 'http',
+      label: `GET /api/${kind}`,
+      durationMs,
+      detail: 'network error',
+      traceId: currentTraceId(),
+    })
+  }
+}

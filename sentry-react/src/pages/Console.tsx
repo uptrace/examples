@@ -1,4 +1,5 @@
 import { ErrorPanel } from '../components/ErrorPanel'
+import { HttpPanel } from '../components/HttpPanel'
 import { LogPanel } from '../components/LogPanel'
 import { SpanPanel } from '../components/SpanPanel'
 
@@ -13,6 +14,7 @@ export function Console() {
       </header>
       <div className="panels">
         <SpanPanel />
+        <HttpPanel />
         <LogPanel />
         <ErrorPanel />
       </div>
