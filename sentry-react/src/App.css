@@ -276,83 +276,6 @@
   color: var(--faint);
 }
 
-.feed {
-  list-style: none;
-  margin: 1rem 0 0;
-  padding: 0 0.85rem;
-  background: var(--raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
-
-.feed__row {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.55rem 0;
-  border-top: 1px solid var(--line);
-  animation: enter 0.24s var(--ease);
-  /* The dot color follows the signal kind. */
-  --signal: var(--accent);
-}
-
-.feed__row:first-child {
-  border-top: none;
-}
-
-.feed__row[data-kind='log'] {
-  --signal: var(--info);
-}
-
-.feed__row[data-kind='error'] {
-  --signal: var(--danger);
-}
-
-.feed__dot {
-  flex: none;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 999px;
-  background: var(--signal);
-  box-shadow: 0 0 0 3px color-mix(in oklch, var(--signal) 18%, transparent);
-}
-
-.feed__label {
-  flex: none;
-  font-size: 0.82rem;
-  font-weight: 560;
-  color: var(--ink);
-}
-
-.feed__id {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.74rem;
-  color: var(--muted);
-}
-
-.feed__cta {
-  flex: none;
-  font-size: 0.8rem;
-  font-weight: 560;
-  white-space: nowrap;
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.feed__cta:hover {
-  text-decoration: underline;
-}
-
-.feed__hint {
-  flex: none;
-  font-size: 0.76rem;
-  color: var(--faint);
-}
-
 @keyframes enter {
   from {
     opacity: 0;
@@ -365,4 +288,85 @@
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Todo text link -------------------------------------------------------- */
+
+.todo__text {
+  flex: 1;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.todo__text:hover {
+  text-decoration: underline;
+}
+
+.todo__text.done {
+  color: var(--faint);
+  text-decoration: line-through;
+}
+
+/* Detail page ----------------------------------------------------------- */
+
+.detail__back {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.detail__back:hover {
+  color: var(--ink);
+}
+
+.detail__title {
+  margin: 0.5rem 0 0;
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+}
+
+.detail__title.done {
+  color: var(--faint);
+  text-decoration: line-through;
+}
+
+/* Current-trace badge --------------------------------------------------- */
+
+.trace-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+}
+
+.trace-badge__label {
+  flex: none;
+  color: var(--muted);
+}
+
+.trace-badge__id {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.74rem;
+  color: var(--ink);
+}
+
+.trace-badge__cta {
+  flex: none;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 560;
+  white-space: nowrap;
+}
+
+.trace-badge__cta:hover {
+  text-decoration: underline;
 }
