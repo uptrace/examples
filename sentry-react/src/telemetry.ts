@@ -4,6 +4,7 @@
 // navigation. Each call also records a breadcrumb and (feature calls, added in
 // later tasks) push a record to the signals store for the in-page Inspector.
 import * as Sentry from '@sentry/react'
+import { push } from './signals'
 
 // Base URL of the Uptrace UI (e.g. http://localhost:5000), used to build a link
 // to the current trace. Optional: without it the badge still shows the trace id.
@@ -68,4 +69,36 @@ function projectIdFromDsn(dsn: string | undefined): string | null {
   } catch {
     return null
   }
+}
+
+// ErrorType is the demo error kinds — varied so Uptrace groups them as distinct
+// issues instead of one repeated error.
+export type ErrorType = 'Error' | 'TypeError' | 'RangeError' | 'SyncError'
+
+// buildError constructs a fresh error of the requested kind so its stack points
+// at the app.
+function buildError(type: ErrorType): Error {
+  switch (type) {
+    case 'TypeError':
+      return new TypeError("Cannot read properties of undefined (reading 'value')")
+    case 'RangeError':
+      return new RangeError('Value out of range')
+    case 'SyncError':
+      return Object.assign(new Error('Failed to sync: network request timed out'), {
+        name: 'SyncError',
+      })
+    case 'Error':
+    default:
+      return new Error('Example error from the Signal Console')
+  }
+}
+
+// reportError captures one exception of the given kind on the CURRENT trace.
+// captureException does not start a trace, so two errors on one page share a
+// trace id.
+export function reportError(type: ErrorType): void {
+  breadcrumb(`Reporting a ${type}`)
+  const err = buildError(type)
+  Sentry.captureException(err)
+  push({ kind: 'error', label: err.message, errorType: type, traceId: currentTraceId() })
 }

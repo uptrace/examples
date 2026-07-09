@@ -1,3 +1,5 @@
+import { ErrorPanel } from '../components/ErrorPanel'
+
 // Console is the home route: a header plus the signal panels (added in later
 // tasks). Every panel's controls fire a Sentry signal onto the current trace.
 export function Console() {
@@ -7,7 +9,9 @@ export function Console() {
         <h1>Signal Console</h1>
         <p className="tagline">Each control sends one Sentry signal to Uptrace.</p>
       </header>
-      <div className="panels" />
+      <div className="panels">
+        <ErrorPanel />
+      </div>
     </section>
   )
 }
