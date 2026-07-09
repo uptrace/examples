@@ -22,7 +22,7 @@ export function TraceBadge() {
   // would link to a trace that never reached Uptrace.
   const linkNode =
     delivery.state === 'failed' ? (
-      <span className="trace-badge__label">not delivered — nothing to view</span>
+      <span className="trace-badge__label">not delivered</span>
     ) : link?.url ? (
       <a className="trace-badge__cta" href={link.url} target="_blank" rel="noreferrer">
         View in Uptrace ↗
