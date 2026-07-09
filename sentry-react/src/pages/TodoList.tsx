@@ -82,7 +82,12 @@ export function TodoList() {
               <input
                 type="checkbox"
                 checked={todo.done}
-                aria-label={`Complete "${todo.text}"`}
+                title={todo.done ? 'Mark as active' : 'Mark as completed'}
+                aria-label={
+                  todo.done
+                    ? `Mark "${todo.text}" as active`
+                    : `Mark "${todo.text}" as completed`
+                }
                 onChange={() => toggleTodo(todo.id)}
               />
               <span className={todo.done ? 'todo__text done' : 'todo__text'}>{todo.text}</span>
