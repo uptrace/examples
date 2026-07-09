@@ -1,70 +1,67 @@
-# React + Sentry → Uptrace
+# React + Sentry → Uptrace (Signal Console)
 
-A minimal React (Vite + TypeScript) todo app instrumented with the
+A minimal React (Vite + TypeScript) app instrumented with the
 [`@sentry/react`](https://docs.sentry.io/platforms/javascript/guides/react/)
-SDK. Uptrace speaks the Sentry ingest protocol, so the Sentry SDK sends data to
-Uptrace **without any extra exporter** — you just point the SDK's DSN at your
-Uptrace project.
+SDK. Uptrace speaks the Sentry ingest protocol, so the SDK sends data to Uptrace
+**without any extra exporter** — you point the SDK's DSN at your Uptrace project.
 
-You'll be able to:
+It is a **Signal Console**: every control fires one explicit Sentry signal and
+shows what it sent in an in-page inspector, so you can watch each signal type and
+then find it in Uptrace.
 
-- add / complete / delete todos and watch **spans** and **logs** attach to the
-  current trace,
-- press **Throw test error** to report an **error** (a few different types) on
-  the current trace,
-- watch a live **delivery-status** line show whether the most recent envelope
-  reached Uptrace, so you can tell a working setup from a broken one.
+- **Spans** — type a name, **Start span** / **Stop span**; the span shows in
+  Uptrace under the name you typed, its duration = the time between clicks.
+- **HTTP** — **OK / Slow (~5s) / Fail (500)** fetch a dev endpoint, producing an
+  `http.client` span on the current trace (Fail also captures an error).
+- **Logs** — **info / warn / error** emit structured logs via the Sentry Logs API.
+- **Errors** — one button per type (`Error`, `TypeError`, `RangeError`,
+  `SyncError`); each is a distinct, findable issue.
+- A **trace badge** shows the current trace id (and a link to it if you set
+  `VITE_UPTRACE_URL`); a **delivery-status** line shows whether the last envelope
+  reached Uptrace; an **inspector** shows what the last control sent.
 
-A **current-trace badge** shows the active trace id and, if you set
-`VITE_UPTRACE_URL`, a link straight to that trace in Uptrace. The link appears
-only while telemetry is reaching Uptrace — if delivery is failing, a trace link
-would point at data that never arrived, so it is hidden. The id changes only
-when you reload the page — not on every button click.
+Two routes (**Home** and **Item 42 / Item foo**) demonstrate that navigating
+mints a **new trace** — the trace id changes on navigation, not just on reload.
+
+> Session Replay is intentionally not included: Uptrace's Sentry ingest does not
+> confirm replay support, and this example only demonstrates signals you can find
+> in Uptrace (errors, spans, logs).
 
 ## How it works
 
-The Sentry SDK builds its request URLs from the DSN you give it
-(`https://<key>@<host>/<project_id>` → `POST <host>/api/<project_id>/envelope/`).
-Uptrace exposes exactly those endpoints, where the Sentry "key" is your Uptrace
-**project token** and the project id is the final segment of the DSN. So
-instrumentation is just a standard `Sentry.init({ dsn })` — see
-[`src/instrument.ts`](src/instrument.ts).
+The Sentry SDK builds its request URLs from the DSN
+(`http://<token>@<host>/<project_id>` → `POST <host>/api/<project_id>/envelope/`),
+which is exactly what Uptrace exposes. So instrumentation is a standard
+`Sentry.init({ dsn })` — see [`src/instrument.ts`](src/instrument.ts). The app
+never starts a trace itself: the React Router tracing integration opens a
+pageload trace on load and a navigation trace on each route change, and every
+span, log, and error attaches to the current trace.
 
-The app never manually begins a new trace: the browser-tracing integration opens
-a pageload trace when the page loads, and every span, log, and error attaches to
-that trace.
+The **HTTP** panel calls `/api/ok`, `/api/slow`, and `/api/fail`, served by a
+small Vite dev-server middleware (see [`vite.config.ts`](vite.config.ts)) so
+there is **no separate backend**. These endpoints exist under `npm run dev`; a
+static `vite preview` build does not include them.
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org) 18 or newer (includes `npm`).
+- [Node.js](https://nodejs.org) 18 or newer.
 - A running Uptrace and a project to send data to:
-  - **Self-hosted:** follow the [Uptrace get-started guide](https://uptrace.dev/get-started).
+  - **Self-hosted:** [Uptrace get-started guide](https://uptrace.dev/get-started).
     The Sentry ingest host is usually `localhost:14318`.
   - **Uptrace Cloud:** create a project at <https://app.uptrace.dev>.
 
 ## 1. Get your Uptrace Sentry DSN
 
-1. Open your project in Uptrace.
-2. In the left sidebar, open the **Project** section and click **Data Source
-   Name** (the page at `/projects/<project_id>/dsn`).
-3. Switch to the **Sentry** tab and use the copy button next to the DSN.
-
-It looks like:
-
-```
-http://project2_secret_token@localhost:14318/2
-```
-
-(`project2_secret_token` is your project token, `2` is the project id.)
+Open your project in Uptrace → **Project → Data Source Name** → **Sentry** tab →
+copy the DSN. It looks like `http://project2_secret_token@localhost:14318/2`.
 
 ## 2. Configure and run
 
 ```bash
 # from this directory: examples/sentry-react
 cp .env.example .env
-# then edit .env and paste your DSN into VITE_SENTRY_DSN
-# optionally set VITE_UPTRACE_URL to your Uptrace UI (e.g. http://localhost:5000)
-# to get clickable trace links
+# edit .env: paste your DSN into VITE_SENTRY_DSN
+# optionally set VITE_UPTRACE_URL to your Uptrace UI for clickable trace links
 
 npm install
 npm run dev
@@ -72,56 +69,44 @@ npm run dev
 
 Open the URL Vite prints (default <http://localhost:5173>).
 
-## 3. Generate some data
+## 3. Generate and find data
 
-In the app:
+Use the panels, watching the inspector and delivery-status line. Then in Uptrace:
 
-- **Add**, **complete**, **delete**, reopen, and **filter** todos. Every one of
-  these actions records a breadcrumb — the trail leading up to any error you
-  trigger next. Adding opens an inactive `todo.open` span held until the todo is
-  completed or deleted (its duration measures how long the todo stayed open),
-  plus a structured info **log** (via the Sentry Logs API) carrying the todo's
-  text and id. Completing ends the span; deleting a todo sends a delete log and
-  ends its span, tagged `cancelled` if the todo was still open.
-- Click **Throw test error** — reports a random error (one of `Error`,
-  `TypeError`, `RangeError`, `TodoSyncError`) with `captureException` on the
-  current trace.
+- **Errors** — the four error buttons (each a distinct type).
+- **Logs** — the info/warn/error logs, with `source` attribute.
+- **Traces / spans** — your named custom spans, the `http.client` spans (the slow
+  one is visibly long), and the pageload/navigation traces. Navigate between
+  routes and watch the trace id change.
 
-Two errors triggered on the same page share a trace id — the id only changes
-when you reload the page. The SDK sends events over the network as you
-interact. (Open your browser's devtools Network tab and look for requests to
-`/api/<project_id>/envelope/` to confirm they're leaving the browser.)
+If nothing shows up, check that `VITE_SENTRY_DSN` is set (the app warns in the
+console if not) and that the DSN host matches your Uptrace ingest address.
+Restart `npm run dev` after editing `.env`. The delivery-status line distinguishes
+"can't reach Uptrace" (host unreachable) from "Uptrace rejected the data" (bad
+DSN key/project).
 
-## 4. See it in Uptrace
+## Tests
 
-- **Errors** — open your project and look under **Errors**. You'll see
-  exceptions from **Throw test error** (one of `Error`, `TypeError`,
-  `RangeError`, `TodoSyncError`). Open one to see the stack trace and, in the
-  event detail, the **breadcrumbs** (the trail of todo actions that preceded it).
-- **Logs** — the info logs from **adding** and **deleting** todos, sent via the
-  Logs API, carry the todo's text and id as attributes.
-- **Traces / spans** — open **Traces & Spans**. Look for `todo.open` spans (one
-  per open todo, duration = time open) under the **pageload** trace the browser
-  tracing integration records (along with its page-load timing and fetch/XHR
-  spans).
+```bash
+npm test
+```
 
-If nothing shows up, double-check that `VITE_SENTRY_DSN` is set (the app logs a
-warning in the browser console if it isn't) and that the DSN host matches your
-Uptrace ingest address. Restart `npm run dev` after editing `.env`. Watch the
-delivery-status line: "Can't reach Uptrace" means the DSN host is unreachable
-(is Uptrace running? is the host right?), while "Uptrace rejected the data"
-means the host answered but the DSN key/project is wrong.
+Playwright drives the app and asserts on what it exposed to the page
+(`window.__signals`, `window.recordedTransactions`), so no Sentry credentials are
+needed.
 
 ## Project layout
 
 | File | Purpose |
 | --- | --- |
-| `src/instrument.ts` | `Sentry.init()` — the only Uptrace-specific wiring — plus the browser-tracing integration and `enableLogs`. |
-| `src/main.tsx` | Imports instrumentation first; wraps the app in `Sentry.ErrorBoundary`. |
-| `src/telemetry.ts` | Every Sentry SDK call the app makes: breadcrumbs, the `todo.open` span, logs, and `captureException`. |
-| `src/todos-context.tsx` | The in-memory todo state and the wiring from each action to its Sentry signal. |
-| `src/pages/TodoList.tsx` | The whole UI: compose, list, filter todos, and the demo button. |
-| `src/components/TraceBadge.tsx` | Shows the current trace id and, when `VITE_UPTRACE_URL` is set, a link to it. |
-| `src/delivery.ts` | Wraps the fetch transport to observe delivery outcomes and publishes the delivery status. |
-| `src/components/DeliveryStatus.tsx` | The delivery-status line, shown beside the trace badge. |
-| `.env.example` | Template for the `VITE_SENTRY_DSN` setting. |
+| `src/instrument.ts` | `Sentry.init()` — the only Uptrace-specific wiring — plus React Router tracing and `enableLogs`. |
+| `src/main.tsx` | Imports instrumentation first; sets up the router and `Sentry.ErrorBoundary`. |
+| `src/telemetry.ts` | Every Sentry SDK call: breadcrumbs, custom spans, logs, errors, requests, trace helpers. |
+| `src/signals.ts` | Framework-free "last signal sent" store the inspector renders and tests read. |
+| `src/pages/Console.tsx` | The home route: the four signal panels. |
+| `src/pages/ItemRoute.tsx` | The `/item/:id` route: fire a signal on the navigation trace. |
+| `src/components/*Panel.tsx` | One panel per signal type. |
+| `src/components/Inspector.tsx` | Shows what the last control sent and its trace id. |
+| `src/components/TraceBadge.tsx` | Current trace id and, with `VITE_UPTRACE_URL`, a link to it. |
+| `src/delivery.ts` / `DeliveryStatus.tsx` | Observe and show whether envelopes reach Uptrace. |
+| `vite.config.ts` | Dev-server middleware for `/api/ok|slow|fail`. |
