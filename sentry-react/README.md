@@ -113,10 +113,10 @@ interact. (Open your browser's devtools Network tab and look for requests to
 
 If nothing shows up, double-check that `VITE_SENTRY_DSN` is set (the app logs a
 warning in the browser console if it isn't) and that the DSN host matches your
-Uptrace ingest address. Restart `npm run dev` after editing `.env`. If the
-delivery-status line reads "Delivery failed", the DSN host is unreachable or
-wrong — check that Uptrace is running and the DSN host matches your ingest
-address.
+Uptrace ingest address. Restart `npm run dev` after editing `.env`. Watch the
+delivery-status line: "Can't reach Uptrace" means the DSN host is unreachable
+(is Uptrace running? is the host right?), while "Uptrace rejected the data"
+means the host answered but the DSN key/project is wrong.
 
 ## Project layout
 
