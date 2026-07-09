@@ -74,12 +74,13 @@ Open the URL Vite prints (default <http://localhost:5173>).
 
 In the app:
 
-- **Add**, **complete**, and **delete** a few todos. Each action records a
-  breadcrumb. Adding opens an inactive `todo.open` span held until the todo is
+- **Add**, **complete**, **delete**, reopen, and **filter** todos. Every one of
+  these actions records a breadcrumb — the trail leading up to any error you
+  trigger next. Adding opens an inactive `todo.open` span held until the todo is
   completed or deleted (its duration measures how long the todo stayed open),
   plus a structured info **log** (via the Sentry Logs API) carrying the todo's
-  text and id. Completing ends the span; deleting an open todo ends it tagged
-  `cancelled` and sends a delete log.
+  text and id. Completing ends the span; deleting a todo sends a delete log and
+  ends its span, tagged `cancelled` if the todo was still open.
 - Click a todo's **text** to open it — this **navigates** to `/todo/:id`,
   which starts a new navigation trace. Watch the trace badge's id change.
 - Click **Sync todos** — runs a `sync_todos` span wrapping nested `serialize`

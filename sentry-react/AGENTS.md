@@ -23,15 +23,16 @@ behavior changes, update it in the same change.
   held in memory only. No backend, no UI framework. It does use
   `react-router-dom` for two routes (`/`, `/todo/:id`) so that navigating
   between them produces real navigation traces.
-- Every user action (add / complete / delete) leaves a Sentry breadcrumb plus
-  its signal: add opens a `todo.open` span and emits a log, complete ends the
-  span, delete ends the span (tagged `cancelled` if still open) and emits a
-  log; keep that going for new actions. The demo buttons on `TodoList` emit
-  telemetry beyond that: **Sync todos** runs nested spans (and occasionally an
-  exception), **Throw test error** reports an exception. Document any new
-  button in the README. Hard rule: never manually begin a new trace — traces
-  come only from the pageload/navigation tracing integration in
-  `instrument.ts`; everything else attaches to whichever trace is current.
+- Every user action (add / complete / delete / reopen / filter) leaves a Sentry
+  breadcrumb; keep that going for new actions. Some also carry a signal: add
+  opens a `todo.open` span and emits a log, complete ends the span, delete ends
+  the span (tagged `cancelled` if still open) and emits a log. The demo buttons
+  on `TodoList` emit telemetry beyond that: **Sync todos** runs nested spans
+  (and occasionally an exception), **Throw test error** reports an exception.
+  Document any new button in the README. Hard rule: never call
+  `Sentry.startNewTrace()` — traces come only from the pageload/navigation
+  tracing integration in `instrument.ts`; everything else attaches to whichever
+  trace is current.
 - TypeScript with `strict` on. JS/TS comments use `//` line comments, including
   comments for exported types and functions.
 - Plain CSS only. Design tokens (OKLCH colors, radius, easing) live in `:root` in
