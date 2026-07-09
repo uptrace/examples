@@ -16,7 +16,9 @@ You'll be able to:
   reached Uptrace, so you can tell a working setup from a broken one.
 
 A **current-trace badge** shows the active trace id and, if you set
-`VITE_UPTRACE_URL`, a link straight to that trace in Uptrace. It changes only
+`VITE_UPTRACE_URL`, a link straight to that trace in Uptrace. The link appears
+only while telemetry is reaching Uptrace — if delivery is failing, a trace link
+would point at data that never arrived, so it is hidden. The id changes only
 when you reload the page — not on every button click.
 
 ## How it works
