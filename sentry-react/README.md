@@ -13,7 +13,9 @@ You'll be able to:
 - open a todo to **navigate** and see a new navigation trace (`/todo/:id`),
 - press **Sync todos** to run **nested spans**,
 - press **Throw test error** to report an **error** (a few different types) on
-  the current trace.
+  the current trace,
+- watch a live **delivery-status** line show whether each envelope actually
+  reached Uptrace, so you can tell a working setup from a broken one.
 
 A **current-trace badge** on every page shows the active trace id and, if you
 set `VITE_UPTRACE_URL`, a link straight to that trace in Uptrace. It changes
@@ -111,7 +113,10 @@ interact. (Open your browser's devtools Network tab and look for requests to
 
 If nothing shows up, double-check that `VITE_SENTRY_DSN` is set (the app logs a
 warning in the browser console if it isn't) and that the DSN host matches your
-Uptrace ingest address. Restart `npm run dev` after editing `.env`.
+Uptrace ingest address. Restart `npm run dev` after editing `.env`. If the
+delivery-status line reads "Delivery failed", the DSN host is unreachable or
+wrong — check that Uptrace is running and the DSN host matches your ingest
+address.
 
 ## Project layout
 
@@ -124,4 +129,6 @@ Uptrace ingest address. Restart `npm run dev` after editing `.env`.
 | `src/pages/TodoList.tsx` | The `/` route: compose, list, filter todos, and the demo buttons. |
 | `src/pages/TodoDetail.tsx` | The `/todo/:id` route, reached by navigating to a todo. |
 | `src/components/TraceBadge.tsx` | Shows the current trace id and, when `VITE_UPTRACE_URL` is set, a link to it. |
+| `src/delivery.ts` | Wraps the fetch transport to observe delivery outcomes and publishes the delivery status. |
+| `src/components/DeliveryStatus.tsx` | The delivery-status line, shown beside the trace badge. |
 | `.env.example` | Template for the `VITE_SENTRY_DSN` setting. |

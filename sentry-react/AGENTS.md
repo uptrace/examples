@@ -14,7 +14,10 @@ behavior changes, update it in the same change.
 - The only Uptrace-specific code is `Sentry.init()` in `src/instrument.ts`;
   `src/telemetry.ts` holds the rest of the Sentry SDK usage. `instrument.ts` is
   imported first in `src/main.tsx` (before React) so instrumentation is in place
-  before the app renders.
+  before the app renders. `instrument.ts` also installs a reporting transport
+  wrapper (`src/delivery.ts`) that observes send outcomes for the UI — it wraps
+  the standard fetch transport and does not change delivery, so it is not an
+  Uptrace-specific adapter.
 - The DSN comes from `VITE_SENTRY_DSN`; never hardcode a DSN. `.env` is
   gitignored — keep `.env.example` as the template and document it in the README.
 - Uptrace ingests the standard Sentry protocol, so there is no Uptrace exporter
