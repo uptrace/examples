@@ -79,17 +79,21 @@ export function TodoList() {
         ) : (
           visible.map((todo) => (
             <li key={todo.id} className="todo">
-              <input
-                type="checkbox"
-                checked={todo.done}
-                title={todo.done ? 'Mark as active' : 'Mark as completed'}
-                aria-label={
-                  todo.done
-                    ? `Mark "${todo.text}" as active`
-                    : `Mark "${todo.text}" as completed`
-                }
-                onChange={() => toggleTodo(todo.id)}
-              />
+              <span
+                className="tip"
+                data-tip={todo.done ? 'Mark as active' : 'Mark as completed'}
+              >
+                <input
+                  type="checkbox"
+                  checked={todo.done}
+                  aria-label={
+                    todo.done
+                      ? `Mark "${todo.text}" as active`
+                      : `Mark "${todo.text}" as completed`
+                  }
+                  onChange={() => toggleTodo(todo.id)}
+                />
+              </span>
               <span className={todo.done ? 'todo__text done' : 'todo__text'}>{todo.text}</span>
               <button
                 className="remove"
