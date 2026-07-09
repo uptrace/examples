@@ -48,8 +48,9 @@ export function currentTraceLink(): TraceLink | null {
 }
 
 // uptraceUrl builds a project-scoped link into the Uptrace UI for a trace, and
-// deep-links to a specific span when spanId is given by appending ?span_id=
-// (the query param Uptrace's own SDKs use). Returns null when the UI URL, the
+// deep-links to a specific span when spanId is given by adding it as a path
+// segment (/traces/<traceId>/<spanId>) — the form the Uptrace explore UI uses;
+// the ?span_id= query param is ignored there. Returns null when the UI URL, the
 // project id, or the trace id is unavailable.
 export function uptraceUrl(traceId: string | null, spanId?: string): string | null {
   if (!UPTRACE_URL || !PROJECT_ID || !traceId) {
@@ -57,7 +58,7 @@ export function uptraceUrl(traceId: string | null, spanId?: string): string | nu
   }
   const base = UPTRACE_URL.replace(/\/+$/, '')
   const url = `${base}/explore/${PROJECT_ID}/traces/${traceId}`
-  return spanId ? `${url}?span_id=${spanId}` : url
+  return spanId ? `${url}/${spanId}` : url
 }
 
 // projectIdFromDsn returns the project id, the last path segment of the DSN

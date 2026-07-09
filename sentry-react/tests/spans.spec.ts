@@ -44,10 +44,11 @@ test('a span record carries a span id and the inspector deep-links to it', async
   expect(rec.spanId).toMatch(/^[0-9a-f]{16}$/)
 
   // .env sets VITE_UPTRACE_URL + a DSN, so the inspector renders a deep link
-  // whose href appends ?span_id= to the trace URL (Uptrace's own span param).
+  // whose href adds the span id as a path segment (/traces/<traceId>/<spanId>),
+  // the form the Uptrace explore UI honors.
   const link = page.locator('.inspector a.inspector__link')
   await expect(link).toHaveAttribute(
     'href',
-    new RegExp(`/traces/${rec.traceId}\\?span_id=${rec.spanId}$`),
+    new RegExp(`/traces/${rec.traceId}/${rec.spanId}$`),
   )
 })

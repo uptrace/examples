@@ -20,7 +20,8 @@ then find it in Uptrace.
   `VITE_UPTRACE_URL`); a **delivery-status** line shows whether the last envelope
   reached Uptrace; an **inspector** shows what the last control sent and (when
   `VITE_UPTRACE_URL` is set) links straight to it in Uptrace — to the exact span
-  for a custom span (`?span_id=`), or to the trace for other signals.
+  for a custom span (`/traces/<traceId>/<spanId>`), or to the trace for other
+  signals.
 
 Two routes (**Home** and **Item 42 / Item foo**) demonstrate that navigating
 mints a **new trace** — the trace id changes on navigation, not just on reload.
