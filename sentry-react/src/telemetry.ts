@@ -102,3 +102,28 @@ export function reportError(type: ErrorType): void {
   Sentry.captureException(err)
   push({ kind: 'error', label: err.message, errorType: type, traceId: currentTraceId() })
 }
+
+// NamedSpan is a running custom span plus what we need to report its duration.
+export interface NamedSpan {
+  span: Sentry.Span
+  name: string
+  startedAt: number
+}
+
+// startNamedSpan starts an inactive span named exactly what the user typed. It
+// is inactive (startInactiveSpan) because its lifetime is a user's, not a
+// function call's — the caller ends it with endNamedSpan. No startNewTrace: it
+// joins the current trace.
+export function startNamedSpan(name: string): NamedSpan {
+  breadcrumb(`Started span "${name}"`)
+  const span = Sentry.startInactiveSpan({ name, op: 'ui.custom' })
+  return { span, name, startedAt: performance.now() }
+}
+
+// endNamedSpan closes a custom span and records its measured duration.
+export function endNamedSpan(handle: NamedSpan): void {
+  handle.span.end()
+  const durationMs = Math.round(performance.now() - handle.startedAt)
+  breadcrumb(`Stopped span "${handle.name}" (${durationMs}ms)`)
+  push({ kind: 'span', label: handle.name, durationMs, traceId: currentTraceId() })
+}
