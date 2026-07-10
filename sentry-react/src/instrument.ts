@@ -56,7 +56,10 @@ Sentry.init({
 
 // Track the pageload/navigation root span so telemetry.ts can nest interactions
 // under it (Uptrace shows only one root per trace). Installed here, right after
-// init, so the initial pageload span is captured.
+// init: its spanStart listener catches later navigation spans, and it also seeds
+// the root from the still-active span to catch the initial pageload span, which
+// already started (synchronously, inside Sentry.init) before the listener could
+// see it.
 installPageRootTracking()
 
 // Record pageload/navigation transaction event ids so end-to-end tests can

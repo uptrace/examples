@@ -10,20 +10,47 @@ import { push } from './signals'
 // pageRoot holds the current page's root span — the pageload/navigation transaction
 // the browser-tracing integration opened. Interactions nest under it so the whole
 // page is one tree with a single root in Uptrace (which shows only one root per
-// trace). Refreshed on every navigation via the spanStart hook.
+// trace). Refreshed on every later navigation via the spanStart hook; the very
+// first pageload span is seeded separately (see installPageRootTracking) because
+// it starts synchronously during Sentry.init, before any hook can observe it.
 let pageRoot: Sentry.Span | undefined
 
-// installPageRootTracking subscribes to the client's spanStart hook to remember the
-// current page root. Call it once right after Sentry.init (from instrument.ts): the
-// pageload span starts during init, before this module is first imported, so
-// subscribing lazily here would miss it.
+// pageRootTrackingInstalled guards installPageRootTracking against running twice
+// (e.g. duplicate imports/HMR), which would otherwise attach a second spanStart
+// listener.
+let pageRootTrackingInstalled = false
+
+// installPageRootTracking wires up tracking of the current page's root span. Call
+// it once right after Sentry.init (from instrument.ts). Two mechanisms are needed:
+//  - The spanStart hook catches every LATER pageload/navigation span (e.g. on
+//    route changes), since those start after this function has already run.
+//  - The initial pageload span is a special case: the reactRouterV7 browser-
+//    tracing integration starts it synchronously inside Sentry.init's
+//    afterAllSetup, so its spanStart fires before this listener exists and the
+//    hook alone would never see it. It is seeded directly from the still-active
+//    span right after subscribing.
 export function installPageRootTracking(): void {
+  if (pageRootTrackingInstalled) return
+  pageRootTrackingInstalled = true
+
   Sentry.getClient()?.on('spanStart', (span) => {
     const { parent_span_id: parentSpanId, op } = Sentry.spanToJSON(span)
     if (!parentSpanId && (op === 'pageload' || op === 'navigation')) {
       pageRoot = span
     }
   })
+
+  // The initial pageload span already started (and emitted spanStart) synchronously
+  // inside Sentry.init, before this listener existed, so the hook above never saw
+  // it. Seed pageRoot from the still-active pageload idle span.
+  const active = Sentry.getActiveSpan()
+  if (active) {
+    const root = Sentry.getRootSpan(active)
+    const op = Sentry.spanToJSON(root).op
+    if (op === 'pageload' || op === 'navigation') {
+      pageRoot = root
+    }
+  }
 }
 
 // nested runs a span as a child transaction of the current page root, so the

@@ -20,6 +20,8 @@ export async function captureTransactions(page: Page): Promise<CapturedTransacti
   await page.route('**/envelope/**', async (route) => {
     const body = route.request().postData() ?? ''
     const [, ...items] = body.split('\n').filter(Boolean)
+    // Assumes every item is exactly two lines (item header + single-line JSON
+    // payload), which holds for this app's JSON transaction items.
     for (let i = 0; i + 1 < items.length; i += 2) {
       let header: { type?: string }
       try {
