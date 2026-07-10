@@ -18,3 +18,18 @@ test('a custom span is emitted as a child of the pageload root', async ({ page }
   expect(span.traceId).toBe(pageload.traceId)
   expect(span.parentSpanId).toBe(pageload.spanId)
 })
+
+test('an HTTP request span is a child of the pageload root', async ({ page }) => {
+  const txns = await captureTransactions(page)
+  await page.goto('/')
+
+  await page.getByRole('button', { name: 'OK (200)', exact: true }).click()
+
+  await expect.poll(() => txns.some((t) => t.op === 'pageload'), { timeout: 15_000 }).toBe(true)
+  await expect.poll(() => txns.some((t) => t.name === 'GET /api/ok'), { timeout: 15_000 }).toBe(true)
+
+  const pageload = txns.find((t) => t.op === 'pageload')!
+  const http = txns.find((t) => t.name === 'GET /api/ok')!
+  expect(http.traceId).toBe(pageload.traceId)
+  expect(http.parentSpanId).toBe(pageload.spanId)
+})

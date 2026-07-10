@@ -178,12 +178,19 @@ export type LogLevel = 'info' | 'warn' | 'error'
 export function emitLog(level: LogLevel, message: string): void {
   breadcrumb(`Log ${level}: ${message}`)
   const attributes = { source: 'signal-console' }
-  if (level === 'info') {
-    Sentry.logger.info(message, attributes)
-  } else if (level === 'warn') {
-    Sentry.logger.warn(message, attributes)
+  const write = () => {
+    if (level === 'info') {
+      Sentry.logger.info(message, attributes)
+    } else if (level === 'warn') {
+      Sentry.logger.warn(message, attributes)
+    } else {
+      Sentry.logger.error(message, attributes)
+    }
+  }
+  if (pageRoot) {
+    Sentry.withActiveSpan(pageRoot, write)
   } else {
-    Sentry.logger.error(message, attributes)
+    write()
   }
   push({ kind: 'log', label: message, level, traceId: currentTraceId() })
 }
@@ -198,30 +205,32 @@ export type RequestKind = 'ok' | 'slow' | 'fail'
 export async function sendRequest(kind: RequestKind): Promise<void> {
   breadcrumb(`Sending ${kind} request`)
   const startedAt = performance.now()
-  try {
-    const res = await fetch(`/api/${kind}`)
-    const durationMs = Math.round(performance.now() - startedAt)
-    push({
-      kind: 'http',
-      label: `GET /api/${kind}`,
-      durationMs,
-      detail: `HTTP ${res.status}`,
-      traceId: currentTraceId(),
-    })
-    if (!res.ok) {
-      const err = new Error(`Request to /api/${kind} failed: HTTP ${res.status}`)
-      Sentry.captureException(err)
-      push({ kind: 'error', label: err.message, errorType: 'Error', traceId: currentTraceId() })
+  await nested({ name: `GET /api/${kind}`, op: 'http' }, async () => {
+    try {
+      const res = await fetch(`/api/${kind}`)
+      const durationMs = Math.round(performance.now() - startedAt)
+      push({
+        kind: 'http',
+        label: `GET /api/${kind}`,
+        durationMs,
+        detail: `HTTP ${res.status}`,
+        traceId: currentTraceId(),
+      })
+      if (!res.ok) {
+        const err = new Error(`Request to /api/${kind} failed: HTTP ${res.status}`)
+        Sentry.captureException(err)
+        push({ kind: 'error', label: err.message, errorType: 'Error', traceId: currentTraceId() })
+      }
+    } catch (e) {
+      const durationMs = Math.round(performance.now() - startedAt)
+      Sentry.captureException(e)
+      push({
+        kind: 'http',
+        label: `GET /api/${kind}`,
+        durationMs,
+        detail: 'network error',
+        traceId: currentTraceId(),
+      })
     }
-  } catch (e) {
-    const durationMs = Math.round(performance.now() - startedAt)
-    Sentry.captureException(e)
-    push({
-      kind: 'http',
-      label: `GET /api/${kind}`,
-      durationMs,
-      detail: 'network error',
-      traceId: currentTraceId(),
-    })
-  }
+  })
 }
