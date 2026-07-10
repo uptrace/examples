@@ -1,8 +1,9 @@
 // telemetry.ts — every Sentry SDK call the app makes lives here, isolated from
-// the UI. Nothing here starts a new trace: spans, logs and errors all attach to
-// the trace the router-tracing integration opened for the current pageload or
-// navigation. Each call also records a breadcrumb and (feature calls, added in
-// later tasks) push a record to the signals store for the in-page Inspector.
+// the UI. Nothing here starts a new trace: every signal attaches to the current
+// pageload/navigation trace and is NESTED under that page's root span, so Uptrace
+// (which shows one root per trace) draws the whole page as a single tree. Each
+// call also records a breadcrumb and pushes a record to the signals store for the
+// in-page Inspector.
 import * as Sentry from '@sentry/react'
 import { push } from './signals'
 
@@ -126,9 +127,9 @@ function buildError(type: ErrorType): Error {
   }
 }
 
-// reportError captures one exception of the given kind on the CURRENT trace.
-// captureException does not start a trace, so two errors on one page share a
-// trace id.
+// reportError captures one exception of the given kind, nested as a child
+// transaction of the page's root span (see `nested`), so it attaches to the
+// page's trace instead of becoming a separate root.
 export function reportError(type: ErrorType): void {
   breadcrumb(`Reporting a ${type}`)
   const err = buildError(type)

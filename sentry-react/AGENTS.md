@@ -31,8 +31,11 @@ behavior changes, update it in the same change.
   error** button on `TodoList` reports an exception on the current trace.
   Document any new button in the README. Hard rule: never call
   `Sentry.startNewTrace()` — the trace comes only from the pageload
-  browser-tracing integration in `instrument.ts`; everything else attaches to
-  that trace.
+  browser-tracing integration in `instrument.ts`. Every signal attaches
+  to that trace **nested under the page's root span** (via `startSpan`/
+  `startInactiveSpan` with `parentSpan` + `forceTransaction`, wired in
+  `telemetry.ts`), because Uptrace renders only one root span per trace — sibling
+  roots would be dropped from the trace tree.
 - TypeScript with `strict` on. JS/TS comments use `//` line comments, including
   comments for exported types and functions.
 - Plain CSS only. Design tokens (OKLCH colors, radius, easing) live in `:root` in

@@ -45,6 +45,15 @@ small Vite dev-server middleware (see [`vite.config.ts`](vite.config.ts)) so
 there is **no separate backend**. These endpoints exist under `npm run dev`; a
 static `vite preview` build does not include them.
 
+### One trace, one tree
+
+Every signal on a page (custom spans, errors, HTTP, logs) is nested under that
+page's pageload/navigation root span, so opening the trace in Uptrace shows one
+tree with everything in it. Uptrace stores one root span per trace, so signals are
+attached as children rather than as separate roots. Each interaction is therefore
+sent as its own Sentry transaction — you will see multiple transaction envelopes
+for one page in the Network tab; in Uptrace they appear as one nested tree.
+
 ## Prerequisites
 
 - [Node.js](https://nodejs.org) 20 or newer.
