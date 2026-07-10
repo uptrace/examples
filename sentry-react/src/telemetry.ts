@@ -31,7 +31,7 @@ export function installPageRootTracking(): void {
 // root's trace id and span id onto it (works even after the pageload transaction
 // ended — only its spanContext is read). When pageRoot is undefined (before the
 // first pageload span), it falls back to the active span/scope: today's behavior.
-export function nested<T>(options: Parameters<typeof Sentry.startSpan>[0], cb: (span: Sentry.Span) => T): T {
+function nested<T>(options: Parameters<typeof Sentry.startSpan>[0], cb: (span: Sentry.Span) => T): T {
   return Sentry.startSpan({ ...options, parentSpan: pageRoot, forceTransaction: true }, cb)
 }
 
@@ -132,7 +132,9 @@ function buildError(type: ErrorType): Error {
 export function reportError(type: ErrorType): void {
   breadcrumb(`Reporting a ${type}`)
   const err = buildError(type)
-  Sentry.captureException(err)
+  nested({ name: `error: ${type}`, op: 'ui.error' }, () => {
+    Sentry.captureException(err)
+  })
   push({ kind: 'error', label: err.message, errorType: type, traceId: currentTraceId() })
 }
 
