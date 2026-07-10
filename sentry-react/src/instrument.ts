@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/react'
 import { useEffect } from 'react'
 import { createRoutesFromChildren, matchRoutes, useLocation, useNavigationType } from 'react-router-dom'
 import { makeReportingTransport } from './delivery'
+import { installPageRootTracking } from './telemetry'
 
 const dsn = import.meta.env.VITE_SENTRY_DSN
 
@@ -52,6 +53,11 @@ Sentry.init({
   // Surfaces as an attribute on every event so you can filter this example's data.
   environment: 'development',
 })
+
+// Track the pageload/navigation root span so telemetry.ts can nest interactions
+// under it (Uptrace shows only one root per trace). Installed here, right after
+// init, so the initial pageload span is captured.
+installPageRootTracking()
 
 // Record pageload/navigation transaction event ids so end-to-end tests can
 // assert a new trace was created on navigation.

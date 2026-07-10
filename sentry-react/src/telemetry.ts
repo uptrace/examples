@@ -6,6 +6,35 @@
 import * as Sentry from '@sentry/react'
 import { push } from './signals'
 
+// pageRoot holds the current page's root span — the pageload/navigation transaction
+// the browser-tracing integration opened. Interactions nest under it so the whole
+// page is one tree with a single root in Uptrace (which shows only one root per
+// trace). Refreshed on every navigation via the spanStart hook.
+let pageRoot: Sentry.Span | undefined
+
+// installPageRootTracking subscribes to the client's spanStart hook to remember the
+// current page root. Call it once right after Sentry.init (from instrument.ts): the
+// pageload span starts during init, before this module is first imported, so
+// subscribing lazily here would miss it.
+export function installPageRootTracking(): void {
+  Sentry.getClient()?.on('spanStart', (span) => {
+    const { parent_span_id: parentSpanId, op } = Sentry.spanToJSON(span)
+    if (!parentSpanId && (op === 'pageload' || op === 'navigation')) {
+      pageRoot = span
+    }
+  })
+}
+
+// nested runs a span as a child transaction of the current page root, so the
+// interaction attaches under the page's tree instead of becoming a sibling root.
+// forceTransaction makes it its own sent envelope; parentSpan stamps the page
+// root's trace id and span id onto it (works even after the pageload transaction
+// ended — only its spanContext is read). When pageRoot is undefined (before the
+// first pageload span), it falls back to the active span/scope: today's behavior.
+export function nested<T>(options: Parameters<typeof Sentry.startSpan>[0], cb: (span: Sentry.Span) => T): T {
+  return Sentry.startSpan({ ...options, parentSpan: pageRoot, forceTransaction: true }, cb)
+}
+
 // Base URL of the Uptrace UI (e.g. http://localhost:5000), used to build a link
 // to the current trace. Optional: without it the badge still shows the trace id.
 const UPTRACE_URL = import.meta.env.VITE_UPTRACE_URL
@@ -120,7 +149,12 @@ export interface NamedSpan {
 // joins the current trace.
 export function startNamedSpan(name: string): NamedSpan {
   breadcrumb(`Started span "${name}"`)
-  const span = Sentry.startInactiveSpan({ name, op: 'ui.custom' })
+  const span = Sentry.startInactiveSpan({
+    name,
+    op: 'ui.custom',
+    parentSpan: pageRoot,
+    forceTransaction: true,
+  })
   return { span, name, startedAt: performance.now() }
 }
 
