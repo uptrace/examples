@@ -2,8 +2,8 @@
 // delivery store (src/delivery.ts) — updated by the reporting transport as each
 // envelope is sent — and frames the result as connection health, so it reads
 // correctly on page load (the pageload trace is the first thing sent) as well as
-// after a demo action. Both success and failure are visible in the UI, not just
-// in the devtools Network tab.
+// after a demo action. It stays quiet on success and only shows a message when an
+// envelope fails to reach Uptrace, so a broken DSN/host is visible without noise.
 import { useSyncExternalStore } from 'react'
 import { subscribeDelivery, getDeliverySnapshot } from '../delivery'
 import type { DeliveryStatus as Status } from '../delivery'
@@ -21,13 +21,18 @@ function message(status: Status): string {
       // A statusCode means the host answered but rejected the data (bad DSN
       // key/project, rate limit); no statusCode means we never reached it.
       return status.statusCode
-        ? `Uptrace rejected the data (HTTP ${status.statusCode}) — check the DSN key/project`
-        : `Can't reach Uptrace at ${status.host ?? 'the ingest server'} (is it running? DSN correct?)`
+        ? `Uptrace rejected the data (HTTP ${status.statusCode})`
+        : "Can't reach Uptrace"
   }
 }
 
 export function DeliveryStatus() {
   const status = useSyncExternalStore(subscribeDelivery, getDeliverySnapshot)
+  // Stay quiet unless delivery fails: no "Connected"/"Connecting" on every page,
+  // only surface a problem when an envelope cannot reach Uptrace.
+  if (status.state !== 'failed') {
+    return null
+  }
   return (
     <div className="delivery" data-state={status.state}>
       <span className="delivery__dot" aria-hidden="true" />

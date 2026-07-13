@@ -35,11 +35,12 @@ export function TraceBadge() {
     }
   }, [delivery.state])
 
+  // The connection status lives in the bottom bar (DeliveryStatus); here we only
+  // surface the Uptrace link once delivery has settled on ok, so it never points
+  // at a trace that failed to arrive.
   let linkNode: ReactNode = null
   if (link && !link.url) {
     linkNode = <span className="trace-badge__label">set VITE_UPTRACE_URL for a link</span>
-  } else if (link && link.url && settled === 'failed') {
-    linkNode = <span className="trace-badge__label">not delivered</span>
   } else if (link && link.url && settled === 'ok') {
     linkNode = (
       <a className="trace-badge__cta" href={link.url} target="_blank" rel="noreferrer">
