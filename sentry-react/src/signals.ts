@@ -5,12 +5,12 @@
 // can read what the app sent.
 
 // SignalKind is which signal type a record describes.
-export type SignalKind = 'span' | 'http' | 'log' | 'error'
+export type SignalKind = 'span' | 'http' | 'error'
 
 // SignalRecord is one produced signal, shaped for display and for tests.
 export interface SignalRecord {
   kind: SignalKind
-  // label is the human summary: the span/log/error name or the request line.
+  // label is the human summary: the span/error name or the request line.
   label: string
   // traceId is the trace the signal attached to when it was produced.
   traceId: string | null
@@ -18,8 +18,6 @@ export interface SignalRecord {
   durationMs?: number
   // spanId is set for custom spans, so the Inspector can deep-link to that span.
   spanId?: string
-  // level is set for logs.
-  level?: 'info' | 'warn' | 'error'
   // errorType is the error kind for errors (e.g. 'RangeError').
   errorType?: string
   // detail is optional extra context (e.g. an HTTP status).

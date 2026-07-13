@@ -4,8 +4,8 @@ import type { RequestKind } from '../telemetry'
 
 const REQUESTS: { kind: RequestKind; label: string }[] = [
   { kind: 'ok', label: 'OK (200)' },
-  { kind: 'slow', label: 'Slow (~5s)' },
   { kind: 'fail', label: 'Fail (500)' },
+  { kind: 'slow', label: 'Slow (~5s)' },
 ]
 
 // HttpPanel fetches a dev endpoint per button, each producing an http.client

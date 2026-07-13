@@ -150,77 +150,82 @@ function buildError(type: ErrorType): Error {
       })
     case 'Error':
     default:
-      return new Error('Example error from the Signal Console')
+      return new Error('Example error')
   }
 }
 
-// reportError captures one exception of the given kind, nested as a child
-// transaction of the page's root span (see `nested`), so it attaches to the
-// page's trace instead of becoming a separate root.
+// captureAppError captures err inside its own span "error: <type>" (a child of the
+// page root, so it attaches to the current route's trace) and records the signal.
+// No op is set, so Uptrace names the span "error: <type>" rather than prefixing it
+// (e.g. "ui.error: ..."); its Logs & Errors entry links to that span, not the root.
+function captureAppError(type: string, err: Error): void {
+  const { traceId, spanId } = nested({ name: `error: ${type}` }, (span) => {
+    Sentry.captureException(err)
+    return span.spanContext()
+  })
+  push({ kind: 'error', label: err.message, errorType: type, spanId, traceId })
+}
+
+// reportError captures one exception of a fixed demo kind (the home Errors panel).
 export function reportError(type: ErrorType): void {
   breadcrumb(`Reporting a ${type}`)
-  const err = buildError(type)
-  nested({ name: `error: ${type}`, op: 'ui.error' }, () => {
-    Sentry.captureException(err)
-  })
-  push({ kind: 'error', label: err.message, errorType: type, traceId: currentTraceId() })
+  captureAppError(type, buildError(type))
 }
 
-// NamedSpan is a running custom span plus what we need to report its duration.
-export interface NamedSpan {
-  span: Sentry.Span
-  name: string
-  startedAt: number
+// reportNamedError reports an error with a custom exception name and message (the
+// per-route error buttons). Distinct names become distinct issues in Uptrace.
+export function reportNamedError(name: string, message: string): void {
+  breadcrumb(`Reporting ${name}: ${message}`)
+  captureAppError(name, Object.assign(new Error(message), { name }))
 }
 
-// startNamedSpan starts an inactive span named exactly what the user typed. It
-// is inactive (startInactiveSpan) because its lifetime is a user's, not a
-// function call's — the caller ends it with endNamedSpan. No startNewTrace: it
-// joins the current trace.
-export function startNamedSpan(name: string): NamedSpan {
-  breadcrumb(`Started span "${name}"`)
+// Todo is one item in the Todos panel. createdAt (ms epoch) records when it was
+// added, so completeTodo can back-date the completed span and measure the time the
+// todo was open.
+export interface Todo {
+  id: number
+  text: string
+  createdAt: number
+  // traceId/spanId of the "created todo" span, so each row can deep-link to it.
+  traceId: string
+  spanId: string
+}
+
+// nextTodoId hands out a stable id per todo for the list's React keys.
+let nextTodoId = 1
+
+// createTodo records a new todo and sends an instant "created todo: <text>" span,
+// so adding a todo shows up immediately. No op is set, so Uptrace names it by that
+// label. The span nests under the page root.
+export function createTodo(text: string): Todo {
+  const createdAt = Date.now()
+  breadcrumb(`Created todo "${text}"`)
   const span = Sentry.startInactiveSpan({
-    name,
-    op: 'ui.custom',
+    name: `created todo: ${text}`,
     parentSpan: pageRoot,
     forceTransaction: true,
   })
-  return { span, name, startedAt: performance.now() }
+  const { spanId, traceId } = span.spanContext()
+  span.end()
+  push({ kind: 'span', label: `created todo: ${text}`, durationMs: 0, spanId, traceId })
+  return { id: nextTodoId++, text, createdAt, traceId, spanId }
 }
 
-// endNamedSpan closes a custom span and records its measured duration.
-export function endNamedSpan(handle: NamedSpan): void {
-  handle.span.end()
-  const durationMs = Math.round(performance.now() - handle.startedAt)
-  const { spanId } = handle.span.spanContext()
-  breadcrumb(`Stopped span "${handle.name}" (${durationMs}ms)`)
-  push({ kind: 'span', label: handle.name, durationMs, traceId: currentTraceId(), spanId })
-}
-
-// LogLevel is the structured-log severities the Logs panel emits.
-export type LogLevel = 'info' | 'warn' | 'error'
-
-// emitLog sends a real structured log via the Sentry Logs API (enabled with
-// enableLogs in instrument.ts). This is NOT captureMessage — logger.* is how
-// Sentry models logs. Attributes ride along as queryable fields.
-export function emitLog(level: LogLevel, message: string): void {
-  breadcrumb(`Log ${level}: ${message}`)
-  const attributes = { source: 'signal-console' }
-  const write = () => {
-    if (level === 'info') {
-      Sentry.logger.info(message, attributes)
-    } else if (level === 'warn') {
-      Sentry.logger.warn(message, attributes)
-    } else {
-      Sentry.logger.error(message, attributes)
-    }
-  }
-  if (pageRoot) {
-    Sentry.withActiveSpan(pageRoot, write)
-  } else {
-    write()
-  }
-  push({ kind: 'log', label: message, level, traceId: currentTraceId() })
+// completeTodo sends a "completed todo: <text>" span back-dated to the todo's
+// creation (startTime), so its duration is how long the todo was open. It nests
+// under the page root.
+export function completeTodo(todo: Todo): void {
+  breadcrumb(`Completed todo "${todo.text}"`)
+  const span = Sentry.startInactiveSpan({
+    name: `completed todo: ${todo.text}`,
+    startTime: new Date(todo.createdAt),
+    parentSpan: pageRoot,
+    forceTransaction: true,
+  })
+  const { spanId } = span.spanContext()
+  span.end()
+  const durationMs = Date.now() - todo.createdAt
+  push({ kind: 'span', label: `completed todo: ${todo.text}`, durationMs, spanId, traceId: currentTraceId() })
 }
 
 // RequestKind is the three demo endpoints the HTTP panel can call.
@@ -233,21 +238,26 @@ export type RequestKind = 'ok' | 'slow' | 'fail'
 export async function sendRequest(kind: RequestKind): Promise<void> {
   breadcrumb(`Sending ${kind} request`)
   const startedAt = performance.now()
-  await nested({ name: `GET /api/${kind}`, op: 'http' }, async () => {
+  await nested({ name: `GET /api/${kind}`, op: 'http' }, async (span) => {
+    const { spanId, traceId } = span.spanContext()
     try {
       const res = await fetch(`/api/${kind}`)
+      // Record the status on the request span (semconv key), so it's queryable in
+      // Uptrace as http.response.status_code and visible on the span we link to.
+      span.setAttribute('http.response.status_code', res.status)
       const durationMs = Math.round(performance.now() - startedAt)
       push({
         kind: 'http',
         label: `GET /api/${kind}`,
         durationMs,
         detail: `HTTP ${res.status}`,
-        traceId: currentTraceId(),
+        spanId,
+        traceId,
       })
       if (!res.ok) {
         const err = new Error(`Request to /api/${kind} failed: HTTP ${res.status}`)
         Sentry.captureException(err)
-        push({ kind: 'error', label: err.message, errorType: 'Error', traceId: currentTraceId() })
+        push({ kind: 'error', label: err.message, errorType: 'Error', spanId, traceId })
       }
     } catch (e) {
       const durationMs = Math.round(performance.now() - startedAt)
@@ -257,7 +267,8 @@ export async function sendRequest(kind: RequestKind): Promise<void> {
         label: `GET /api/${kind}`,
         durationMs,
         detail: 'network error',
-        traceId: currentTraceId(),
+        spanId,
+        traceId,
       })
     }
   })

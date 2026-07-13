@@ -27,7 +27,7 @@ Sentry.init({
   transport: makeReportingTransport,
 
   // React Router v7 tracing: opens a pageload trace on load and a navigation
-  // trace on each route change, named by the parameterized route (/item/:id).
+  // trace on each route change, named by the parameterized route (/products/:id).
   // This is the only place traces are started — signals attach to the current
   // trace; the app never calls startNewTrace.
   integrations: [
@@ -39,9 +39,6 @@ Sentry.init({
       matchRoutes,
     }),
   ],
-
-  // Send structured logs (Sentry.logger.*) to Uptrace, used by the Logs panel.
-  enableLogs: true,
 
   // Sample 100% of traces. Lower this in production; for a demo we want to see
   // every interaction in Uptrace.

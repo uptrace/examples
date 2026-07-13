@@ -1,21 +1,15 @@
 import { ErrorPanel } from '../components/ErrorPanel'
 import { HttpPanel } from '../components/HttpPanel'
-import { LogPanel } from '../components/LogPanel'
-import { SpanPanel } from '../components/SpanPanel'
+import { TodoPanel } from '../components/TodoPanel'
 
-// Console is the home route: a header plus the signal panels (added in later
-// tasks). Every panel's controls fire a Sentry signal onto the current trace.
+// Console is the home route: the signal panels. Navigation to the other routes
+// lives in the top nav bar.
 export function Console() {
   return (
     <section className="console">
-      <header className="console__head">
-        <h1>Signal Console</h1>
-        <p className="tagline">Each control sends one Sentry signal to Uptrace.</p>
-      </header>
       <div className="panels">
-        <SpanPanel />
+        <TodoPanel />
         <HttpPanel />
-        <LogPanel />
         <ErrorPanel />
       </div>
     </section>
