@@ -17,6 +17,7 @@
   --danger: oklch(0.55 0.18 25);
   --danger-tint: oklch(0.96 0.03 25);
   --info: oklch(0.6 0.12 230);
+  --ok: oklch(0.62 0.13 155);
 
   --radius: 9px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1); /* ease-out-quint */
