@@ -1,8 +1,12 @@
 import { test, expect } from '@playwright/test'
+import { acceptEnvelopes } from './helpers/envelopes'
 
 test('adding a todo records a created span; completing it records a completed span with duration', async ({
   page,
 }) => {
+  // The row only links its span once delivery settles ok, so stand in for a
+  // reachable Uptrace.
+  await acceptEnvelopes(page)
   await page.goto('/')
   await page.getByLabel('Todo text').fill('buy milk')
   await page.getByRole('button', { name: 'Add' }).click()
@@ -40,6 +44,9 @@ test('adding a todo emits exactly one created span', async ({ page }) => {
 })
 
 test('a completed todo span carries a span id and the inspector deep-links to it', async ({ page }) => {
+  // The inspector only links a signal once delivery settles ok, so stand in for a
+  // reachable Uptrace.
+  await acceptEnvelopes(page)
   await page.goto('/')
   await page.getByLabel('Todo text').fill('linkable')
   await page.getByRole('button', { name: 'Add' }).click()

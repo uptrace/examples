@@ -3,6 +3,7 @@
 // It wraps the standard fetch transport; it only watches send results, it never
 // changes what or how Sentry sends. This is how the app can show "delivered" vs
 // "couldn't reach Uptrace" instead of leaving that only in the Network tab.
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import * as Sentry from '@sentry/react'
 
 // DeliveryState is the lifecycle of the most recent envelope send.
@@ -54,6 +55,22 @@ export function subscribeDelivery(listener: () => void): () => void {
 // getDeliverySnapshot returns the current status (stable reference between emits).
 export function getDeliverySnapshot(): DeliveryStatus {
   return snapshot
+}
+
+// useSettledDelivery returns the last settled send outcome (ok/failed), ignoring the
+// transient idle/sending, or null before the first one settles. Every send emits
+// 'sending' first, so a component reading the live state would flicker on each action:
+// a failure warning would blink out, a link would flash in and vanish. Read this
+// instead of the raw snapshot whenever the UI reacts to delivery.
+export function useSettledDelivery(): DeliveryStatus | null {
+  const status = useSyncExternalStore(subscribeDelivery, getDeliverySnapshot)
+  const [settled, setSettled] = useState<DeliveryStatus | null>(null)
+  useEffect(() => {
+    if (status.state === 'ok' || status.state === 'failed') {
+      setSettled(status)
+    }
+  }, [status])
+  return settled
 }
 
 // makeReportingTransport wraps the standard fetch transport and reports each

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { completeTodo, createTodo, uptraceUrl } from '../telemetry'
 import type { Todo } from '../telemetry'
+import { useSettledDelivery } from '../delivery'
 
 // TodoPanel: add a todo (sends a "created" span) and mark it Done (sends a
 // "completed" span whose duration is how long the todo was open). Both spans nest
@@ -8,6 +9,9 @@ import type { Todo } from '../telemetry'
 export function TodoPanel() {
   const [text, setText] = useState('')
   const [todos, setTodos] = useState<Todo[]>([])
+  // Only link a span once delivery has settled on ok: one that never reached Uptrace
+  // has nothing to open there. Same rule as the Inspector and the trace badge.
+  const delivered = useSettledDelivery()?.state === 'ok'
 
   function add() {
     const trimmed = text.trim()
@@ -45,7 +49,7 @@ export function TodoPanel() {
       {todos.length > 0 && (
         <ul className="todos">
           {todos.map((todo) => {
-            const url = uptraceUrl(todo.traceId, todo.spanId)
+            const url = delivered ? uptraceUrl(todo.traceId, todo.spanId) : null
             return (
               <li key={todo.id} className="todo">
                 <span className="todo__text">{todo.text}</span>

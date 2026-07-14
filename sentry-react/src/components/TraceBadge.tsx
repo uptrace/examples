@@ -3,24 +3,18 @@
 // once after mount (requestAnimationFrame defers the read until the
 // browser-tracing integration has opened the pageload trace).
 //
-// The link is gated on the last *settled* delivery result (ok/failed), not the
-// live state: showing it optimistically would flash a link on load that vanishes
-// when the first envelope fails, and hiding it during every transient "sending"
-// would make it flicker on each action. So we remember the last ok/failed and
-// only show the link once delivery has settled on ok.
-import { useEffect, useState, useSyncExternalStore } from 'react'
+// The link only appears once delivery has settled on ok (useSettledDelivery), so it
+// never points at a trace that failed to arrive.
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { currentTraceLink } from '../telemetry'
 import type { TraceLink } from '../telemetry'
-import { subscribeDelivery, getDeliverySnapshot } from '../delivery'
+import { useSettledDelivery } from '../delivery'
 
 export function TraceBadge() {
   const [link, setLink] = useState<TraceLink | null>(null)
-  const delivery = useSyncExternalStore(subscribeDelivery, getDeliverySnapshot)
-
-  // The last confirmed delivery outcome, ignoring the transient idle/sending.
-  const [settled, setSettled] = useState<'ok' | 'failed' | null>(null)
+  const settled = useSettledDelivery()
 
   const location = useLocation()
 
@@ -29,19 +23,13 @@ export function TraceBadge() {
     return () => cancelAnimationFrame(raf)
   }, [location.key])
 
-  useEffect(() => {
-    if (delivery.state === 'ok' || delivery.state === 'failed') {
-      setSettled(delivery.state)
-    }
-  }, [delivery.state])
-
   // The connection status lives in the bottom bar (DeliveryStatus); here we only
   // surface the Uptrace link once delivery has settled on ok, so it never points
   // at a trace that failed to arrive.
   let linkNode: ReactNode = null
   if (link && !link.url) {
     linkNode = <span className="trace-badge__label">set VITE_UPTRACE_URL for a link</span>
-  } else if (link && link.url && settled === 'ok') {
+  } else if (link && link.url && settled?.state === 'ok') {
     linkNode = (
       <a className="trace-badge__cta" href={link.url} target="_blank" rel="noreferrer">
         View in Uptrace ↗

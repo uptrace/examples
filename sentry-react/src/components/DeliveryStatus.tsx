@@ -4,8 +4,7 @@
 // correctly on page load (the pageload trace is the first thing sent) as well as
 // after a demo action. It stays quiet on success and only shows a message when an
 // envelope fails to reach Uptrace, so a broken DSN/host is visible without noise.
-import { useSyncExternalStore } from 'react'
-import { subscribeDelivery, getDeliverySnapshot } from '../delivery'
+import { useSettledDelivery } from '../delivery'
 import type { DeliveryStatus as Status } from '../delivery'
 
 // message returns the label for a delivery status.
@@ -19,24 +18,26 @@ function message(status: Status): string {
       return 'Connected to Uptrace ✓'
     case 'failed':
       // A statusCode means the host answered but rejected the data (bad DSN
-      // key/project, rate limit); no statusCode means we never reached it.
+      // key/project, rate limit); no statusCode means we never reached it, so name
+      // the host we tried — a wrong DSN host is the usual cause.
       return status.statusCode
         ? `Uptrace rejected the data (HTTP ${status.statusCode})`
-        : "Can't reach Uptrace"
+        : `Can't reach Uptrace at ${status.host ?? 'the ingest server'}`
   }
 }
 
 export function DeliveryStatus() {
-  const status = useSyncExternalStore(subscribeDelivery, getDeliverySnapshot)
+  const settled = useSettledDelivery()
+
   // Stay quiet unless delivery fails: no "Connected"/"Connecting" on every page,
   // only surface a problem when an envelope cannot reach Uptrace.
-  if (status.state !== 'failed') {
+  if (settled?.state !== 'failed') {
     return null
   }
   return (
-    <div className="delivery" data-state={status.state}>
+    <div className="delivery" data-state={settled.state}>
       <span className="delivery__dot" aria-hidden="true" />
-      <span className="delivery__text">{message(status)}</span>
+      <span className="delivery__text">{message(settled)}</span>
     </div>
   )
 }

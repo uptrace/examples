@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test'
+import { acceptEnvelopes } from './helpers/envelopes'
 
 test('each error button records a typed error signal on the current trace', async ({ page }) => {
+  // The inspector only links a signal once delivery settles ok, so stand in for a
+  // reachable Uptrace.
+  await acceptEnvelopes(page)
   await page.goto('/')
 
   await page.getByRole('button', { name: 'RangeError', exact: true }).click()

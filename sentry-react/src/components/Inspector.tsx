@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { subscribeSignals, getSignalSnapshot } from '../signals'
 import type { SignalRecord } from '../signals'
 import { uptraceUrl } from '../telemetry'
+import { useSettledDelivery } from '../delivery'
 import { DeliveryStatus } from './DeliveryStatus'
 
 // uptraceKind maps the app's control type to the signal type Uptrace actually
@@ -30,7 +31,12 @@ function describe(r: SignalRecord): string {
 // "what was sent" and "did it arrive" sit together next to the trace id.
 export function Inspector() {
   const record = useSyncExternalStore(subscribeSignals, getSignalSnapshot)
-  const url = record ? uptraceUrl(record.traceId, record.spanId) : null
+  const settled = useSettledDelivery()
+  // Only link a signal once delivery has settled on ok: an envelope that never
+  // reached Uptrace has nothing to open there, so we describe it without a link
+  // (the delivery status alongside says why). Same rule as TraceBadge.
+  const delivered = settled?.state === 'ok'
+  const url = record && delivered ? uptraceUrl(record.traceId, record.spanId) : null
   return (
     <aside className="inspector" data-kind={record?.kind ?? 'none'}>
       <span className="inspector__label">last signal</span>

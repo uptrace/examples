@@ -10,6 +10,14 @@ export interface CapturedTransaction {
   name?: string
 }
 
+// acceptEnvelopes answers every envelope POST with 200, standing in for a reachable
+// Uptrace: delivery settles on ok, which is what the UI gates its trace/span links on.
+export async function acceptEnvelopes(page: Page): Promise<void> {
+  await page.route('**/envelope/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
+  )
+}
+
 // captureTransactions intercepts Sentry envelopes POSTed to the ingest endpoint,
 // fulfilling them locally (so no real Uptrace is needed) and collecting every
 // transaction item's trace context into the returned array. A Sentry envelope is
