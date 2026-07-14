@@ -107,7 +107,9 @@ npm test
 
 Playwright drives the app and asserts on what it exposed to the page
 (`window.__signals`, `window.recordedTransactions`), so no Sentry credentials are
-needed.
+needed: `playwright.config.ts` gives the test dev server a dummy DSN (the SDK is
+inert without one) and ignores your `.env`. Nothing listens at that DSN — tests
+that read envelopes intercept them in the browser.
 
 ## Project layout
 

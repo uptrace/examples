@@ -58,5 +58,8 @@ behavior changes, update it in the same change.
 - `npm run build` — type-check (`tsc -b`) and production build.
 - `npm test` — Playwright end-to-end tests. They drive the app and assert on what
   it exposes to the page (`window.__signals`, `window.recordedTransactions`), so no
-  Sentry credentials are needed. Run `npm run build` and `npm test` when changing
-  behavior, and click through the app too.
+  Sentry credentials are needed: `playwright.config.ts` gives the test dev server a
+  dummy DSN and ignores your `.env`, keeping the suite green on a fresh clone. Keep
+  it that way — the SDK is inert without a DSN (no spans, no trace ids, no
+  envelopes), so a suite that reads them must supply one itself. Run `npm run build`
+  and `npm test` when changing behavior, and click through the app too.
