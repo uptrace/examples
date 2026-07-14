@@ -118,13 +118,9 @@ test dev server a dummy DSN (the SDK is inert without one) and ignores your `.en
 | `src/main.tsx` | Imports instrumentation first; sets up the router and `Sentry.ErrorBoundary`. |
 | `src/telemetry.ts` | Every Sentry SDK call: breadcrumbs, custom spans, errors, requests, trace helpers. |
 | `src/signals.ts` | Framework-free "last signal sent" store the inspector renders. |
-| `src/pages/Console.tsx` | The home route: the Todos, HTTP, and Errors panels. |
-| `src/pages/ProductsPage.tsx`, `CategoriesPage.tsx`, `NotFound.tsx` | The `/products/:id`, `/categories/*`, and catch-all routes. |
-| `src/components/RoutePage.tsx` | Shared sub-route body: a subtitle plus per-route error buttons. |
-| `src/components/Layout.tsx` | Persistent shell: side nav, trace badge, routed content, inspector. |
-| `src/components/NavBar.tsx` | Side nav that switches routes. |
-| `src/components/*Panel.tsx` | One panel per demo: todos, HTTP, errors. |
-| `src/components/Inspector.tsx` | Shows what the last control sent and its trace id. |
-| `src/components/TraceBadge.tsx` | Current trace id and, with `VITE_UPTRACE_URL`, a link to it. |
+| `src/pages.tsx` | The routes: home console, `/products/:id`, `/categories/*`, not-found, and the shared route body. |
+| `src/panels.tsx` | The three demo controls: todos, HTTP, errors. |
+| `src/shell.tsx` | Persistent frame: side nav, trace badge, routed content, inspector. |
+| `src/inspector.tsx` | Bottom bar: what the last control sent, and whether it reached Uptrace. |
 | `src/delivery.ts` / `DeliveryStatus.tsx` | Observe and show whether envelopes reach Uptrace. |
 | `vite.config.ts` | Dev-server middleware for `/api/ok|slow|fail`. |

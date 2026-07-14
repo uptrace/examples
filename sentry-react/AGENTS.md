@@ -47,7 +47,10 @@ behavior changes, update it in the same change.
   `forceTransaction`, wired in `telemetry.ts`), because Uptrace renders only one
   root span per trace — sibling roots would be dropped from the trace tree.
 - TypeScript with `strict` on. JS/TS comments use `//` line comments, including
-  comments for exported types and functions.
+  comments for exported types and functions. Comment only what the code cannot say.
+- The UI is four files grouped by what they do — `shell.tsx` (frame), `inspector.tsx`
+  (bottom readout), `panels.tsx` (the demo controls), `pages.tsx` (the routes) — not
+  one file per component. An example is read top to bottom; keep it that way.
 - Plain CSS only. Design tokens (OKLCH colors, radius, easing) live in `:root` in
   `src/index.css`; component styles in `src/App.css`. No Tailwind, no component
   library, no CSS-in-JS. Keep the dependency list short.
