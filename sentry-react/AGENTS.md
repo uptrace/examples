@@ -27,7 +27,7 @@ behavior changes, update it in the same change.
   backend — the `/api/ok|slow|fail` endpoints are Vite dev-server middleware
   (`vite.config.ts`), so they exist under `npm run dev` but not in a static
   `vite preview` build. No UI framework.
-- Navigation is traced by `Sentry.withSentryReactRouterV7Routing` (`src/main.tsx`),
+- Navigation is traced by `Sentry.wrapReactRouterRouting` (`src/main.tsx`),
   which names each navigation trace by its route pattern (`/products/:id`,
   `/categories/*`), not the concrete URL. Keep that: it is a deliberate
   low-cardinality demonstration, and the concrete URL still rides on the root span

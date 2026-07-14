@@ -14,7 +14,7 @@ import './App.css'
 
 // Wrapping Routes lets the router-tracing integration name navigation traces by
 // their parameterized path (/products/:id, /categories/*) rather than the URL.
-const SentryRoutes = Sentry.withSentryReactRouterV7Routing(Routes)
+const SentryRoutes = Sentry.wrapReactRouterRouting(Routes)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

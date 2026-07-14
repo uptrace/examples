@@ -27,7 +27,7 @@ Sentry.init({
   // Opens a pageload trace on load and a navigation trace per route change, named by
   // route pattern (/products/:id). The app never starts a trace itself.
   integrations: [
-    Sentry.reactRouterV7BrowserTracingIntegration({
+    Sentry.reactRouterBrowserTracingIntegration({
       useEffect,
       useLocation,
       useNavigationType,
