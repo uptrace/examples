@@ -12,7 +12,10 @@ export function TodoPanel() {
   function add() {
     const trimmed = text.trim()
     if (!trimmed) return
-    setTodos((prev) => [...prev, createTodo(trimmed)])
+    // createTodo sends the span, so it stays out of the updater: StrictMode
+    // double-invokes updaters in dev, which would send it twice.
+    const todo = createTodo(trimmed)
+    setTodos((prev) => [...prev, todo])
     setText('')
   }
 

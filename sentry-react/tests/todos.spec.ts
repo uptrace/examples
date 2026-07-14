@@ -24,6 +24,21 @@ test('adding a todo records a created span; completing it records a completed sp
   expect((last as { durationMs?: number }).durationMs).toBeGreaterThan(0)
 })
 
+// Guards against emitting the span from inside a setState updater: StrictMode
+// double-invokes updaters in dev, which would send the span twice.
+test('adding a todo emits exactly one created span', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('Todo text').fill('once')
+  await page.getByRole('button', { name: 'Add' }).click()
+
+  const created = await page.evaluate(() =>
+    (window.__signals ?? []).filter(
+      (s) => (s as { label?: string }).label === 'created todo: once',
+    ).length,
+  )
+  expect(created).toBe(1)
+})
+
 test('a completed todo span carries a span id and the inspector deep-links to it', async ({ page }) => {
   await page.goto('/')
   await page.getByLabel('Todo text').fill('linkable')
@@ -38,8 +53,9 @@ test('a completed todo span carries a span id and the inspector deep-links to it
   expect(rec.kind).toBe('span')
   expect(rec.spanId).toMatch(/^[0-9a-f]{16}$/)
 
-  // .env sets VITE_UPTRACE_URL + a DSN, so the inspector renders a deep link whose
-  // href adds the span id as a path segment (/traces/<traceId>/<spanId>).
+  // The test server sets VITE_UPTRACE_URL + a DSN (playwright.config.ts), so the
+  // inspector renders a deep link whose href adds the span id as a path segment
+  // (/traces/<traceId>/<spanId>).
   const link = page.locator('.inspector a.inspector__link')
   await expect(link).toHaveAttribute('href', new RegExp(`/traces/${rec.traceId}/${rec.spanId}$`))
 })
