@@ -34,7 +34,8 @@ behavior changes, update it in the same change.
   as `url.full`.
 - Each control fires an explicit Sentry signal and leaves a breadcrumb; keep both
   going for new controls. The signals are: Todos (a `created todo` span on add, a
-  back-dated `completed todo` span on Done), HTTP (`/api/ok|slow|fail` → an
+  back-dated `completed todo` span on Done), HTTP (`/api/ok|slow|fail` → a
+  `GET /api/…` span nested under the page root, wrapping the SDK's auto-instrumented
   `http.client` span; Fail also captures an error), and Errors (one exception per
   button — the home panel uses fixed types, each sub-route its own named errors).
   The not-found route auto-reports a `PageNotFound` error when shown. Document any

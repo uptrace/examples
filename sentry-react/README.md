@@ -10,8 +10,9 @@ in-page inspector, so you can watch each signal type and then find it in Uptrace
 
 - **Todos** — add a todo (a `created todo` span) and mark it **Done** (a
   `completed todo` span whose duration is how long the todo was open).
-- **HTTP** — **OK / Slow (~5s) / Fail (500)** fetch a dev endpoint, producing an
-  `http.client` span on the current trace (Fail also captures an error).
+- **HTTP** — **OK / Slow (~5s) / Fail (500)** fetch a dev endpoint. Each request is
+  a `GET /api/…` span on the current trace, wrapping the `http.client` span the SDK
+  instruments fetch with (Fail also captures an error).
 - **Errors** — one button per type (`Error`, `TypeError`, `RangeError`,
   `SyncError`); each is a distinct, findable issue.
 - **Routes** — a side nav lists the app's routes (Products, Categories, News,
@@ -86,9 +87,10 @@ Open the URL Vite prints (default <http://localhost:5173>).
 Use the panels, watching the inspector and delivery-status line. Then in Uptrace:
 
 - **Errors** — the four error buttons (each a distinct type).
-- **Traces / spans** — your todo spans (`created todo` / `completed todo`), the `http.client` spans (the slow
-  one is visibly long), and the pageload/navigation traces. Navigate between
-  routes and watch the trace id change.
+- **Traces / spans** — your todo spans (`created todo` / `completed todo`), the
+  request spans (`GET /api/slow` is visibly long, with the SDK's `http.client` span
+  nested inside it), and the pageload/navigation traces. Navigate between routes and
+  watch the trace id change.
 
 If nothing shows up, check that `VITE_SENTRY_DSN` is set (the app warns in the
 console if not) and that the DSN host matches your Uptrace ingest address.

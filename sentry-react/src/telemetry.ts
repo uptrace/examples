@@ -234,10 +234,11 @@ export function completeTodo(todo: Todo): void {
 // RequestKind is the three demo endpoints the HTTP panel can call.
 export type RequestKind = 'ok' | 'slow' | 'fail'
 
-// sendRequest fetches a dev endpoint, producing an http.client span on the
-// current trace (the browser-tracing integration instruments fetch). It records
-// its own measured record for the Inspector, and treats a non-OK response as a
-// failure worth capturing as an error too.
+// sendRequest fetches a dev endpoint inside a request span of its own, which the
+// SDK's auto-instrumented http.client span then nests under: the auto span alone
+// would be a sibling root once the pageload span has ended (Uptrace keeps one root
+// per trace), and it gives us the span id the Inspector links and the duration it
+// shows. It treats a non-OK response as a failure worth capturing as an error too.
 export async function sendRequest(kind: RequestKind): Promise<void> {
   breadcrumb(`Sending ${kind} request`)
   const startedAt = performance.now()
