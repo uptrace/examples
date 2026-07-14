@@ -58,22 +58,3 @@ Sentry.init({
 // already started (synchronously, inside Sentry.init) before the listener could
 // see it.
 installPageRootTracking()
-
-// Record pageload/navigation transaction event ids so end-to-end tests can assert a
-// new trace was created on navigation. Dev-only: it is test scaffolding, and the
-// array grows unbounded, so Vite strips it from the production build.
-if (import.meta.env.DEV) {
-  Sentry.addEventProcessor(event => {
-    if (
-      event.type === 'transaction' &&
-      (event.contexts?.trace?.op === 'pageload' || event.contexts?.trace?.op === 'navigation')
-    ) {
-      const id = event.event_id
-      if (id) {
-        window.recordedTransactions = window.recordedTransactions || []
-        window.recordedTransactions.push(id)
-      }
-    }
-    return event
-  })
-}

@@ -57,10 +57,11 @@ behavior changes, update it in the same change.
 - `npm install`
 - `npm run dev` — local dev server.
 - `npm run build` — type-check (`tsc -b`) and production build.
-- `npm test` — Playwright end-to-end tests. They drive the app and assert on what
-  it exposes to the page (`window.__signals`, `window.recordedTransactions`), so no
-  Sentry credentials are needed: `playwright.config.ts` gives the test dev server a
-  dummy DSN and ignores your `.env`, keeping the suite green on a fresh clone. Keep
-  it that way — the SDK is inert without a DSN (no spans, no trace ids, no
-  envelopes), so a suite that reads them must supply one itself. Run `npm run build`
-  and `npm test` when changing behavior, and click through the app too.
+- `npm test` — two Playwright specs, guarding only what is Uptrace-specific: single-
+  root trace nesting, and route-pattern trace naming. They read the intercepted Sentry
+  envelopes, so no credentials and no running Uptrace are needed: `playwright.config.ts`
+  gives the test dev server a dummy DSN and ignores your `.env`, keeping them green on
+  a fresh clone. Keep it that way — the SDK is inert without a DSN (no spans, no trace
+  ids, no envelopes), so a suite that reads them must supply one itself. The app must
+  not carry test hooks: assert on what it sends, never on globals it exposes for tests.
+  Run `npm run build` and `npm test` when changing behavior, and click through the app.

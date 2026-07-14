@@ -104,11 +104,11 @@ DSN key/project).
 npm test
 ```
 
-Playwright drives the app and asserts on what it exposed to the page
-(`window.__signals`, `window.recordedTransactions`), so no Sentry credentials are
-needed: `playwright.config.ts` gives the test dev server a dummy DSN (the SDK is
-inert without one) and ignores your `.env`. Nothing listens at that DSN — tests
-that read envelopes intercept them in the browser.
+Two specs, covering only what is Uptrace-specific: every signal nests under one
+root span per trace, and each navigation mints a trace named by its route pattern.
+They intercept the Sentry envelopes in the browser and read them, so no Sentry
+credentials and no running Uptrace are needed — `playwright.config.ts` gives the
+test dev server a dummy DSN (the SDK is inert without one) and ignores your `.env`.
 
 ## Project layout
 
@@ -117,7 +117,7 @@ that read envelopes intercept them in the browser.
 | `src/instrument.ts` | `Sentry.init()` — the only Uptrace-specific wiring — plus React Router tracing. |
 | `src/main.tsx` | Imports instrumentation first; sets up the router and `Sentry.ErrorBoundary`. |
 | `src/telemetry.ts` | Every Sentry SDK call: breadcrumbs, custom spans, errors, requests, trace helpers. |
-| `src/signals.ts` | Framework-free "last signal sent" store the inspector renders and tests read. |
+| `src/signals.ts` | Framework-free "last signal sent" store the inspector renders. |
 | `src/pages/Console.tsx` | The home route: the Todos, HTTP, and Errors panels. |
 | `src/pages/ProductsPage.tsx`, `CategoriesPage.tsx`, `NotFound.tsx` | The `/products/:id`, `/categories/*`, and catch-all routes. |
 | `src/components/RoutePage.tsx` | Shared sub-route body: a subtitle plus per-route error buttons. |

@@ -1,8 +1,7 @@
 // signals.ts — a tiny framework-free store holding the most recent telemetry
 // signal the app produced, so the in-page Inspector can show "what was just
 // sent" without the devtools Network tab. Every telemetry.ts feature call pushes
-// here. It also mirrors each record onto window.__signals so end-to-end tests
-// can read what the app sent.
+// here.
 
 // SignalKind is which signal type a record describes.
 export type SignalKind = 'span' | 'http' | 'error'
@@ -27,15 +26,9 @@ export interface SignalRecord {
 let snapshot: SignalRecord | null = null
 const listeners = new Set<() => void>()
 
-// push records the newest signal, notifies subscribers, and in dev also mirrors it
-// to window.__signals for the tests. That mirror is test scaffolding and grows
-// unbounded, so Vite strips it from the production build; the UI reads the store.
+// push records the newest signal and notifies subscribers.
 export function push(record: SignalRecord): void {
   snapshot = record
-  if (import.meta.env.DEV) {
-    window.__signals = window.__signals ?? []
-    window.__signals.push(record)
-  }
   for (const listener of listeners) {
     listener()
   }

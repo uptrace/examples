@@ -1,73 +1,22 @@
 import { test, expect } from '@playwright/test'
 import { captureTransactions } from './helpers/envelopes'
 
-test('navigating to a route mints a new trace named by its pattern', async ({ page }) => {
+// Each navigation must mint a new trace named by its route pattern, not the concrete
+// URL: that is the low-cardinality grouping Uptrace shows navigations under.
+test('navigating mints a new trace named by its route pattern', async ({ page }) => {
   const txns = await captureTransactions(page)
   await page.goto('/')
-  const badge = page.locator('.trace-badge__id')
-  await expect(badge).not.toHaveText('—')
-  const pageloadTrace = (await badge.textContent())!
+  await expect.poll(() => txns.some((t) => t.op === 'pageload'), { timeout: 15_000 }).toBe(true)
 
   await page.getByRole('link', { name: 'Products' }).click()
   await expect(page).toHaveURL(/\/products\/42$/)
-  await page.waitForFunction(() => (window.recordedTransactions?.length ?? 0) >= 2)
-  await expect(badge).not.toHaveText(pageloadTrace)
 
-  // The navigation transaction is named by the route pattern, not the concrete id.
   await expect
     .poll(() => txns.find((t) => t.op === 'navigation')?.name, { timeout: 15_000 })
     .toBe('/products/:id')
-})
 
-test('a signal fired on a route attaches to that route trace', async ({ page }) => {
-  await page.goto('/')
-  const pageloadTrace = (await page.locator('.trace-badge__id').textContent())!
-
-  await page.getByRole('link', { name: 'Products' }).click()
-  await expect(page).toHaveURL(/\/products\/42$/)
-  await page.waitForFunction(() => (window.recordedTransactions?.length ?? 0) >= 2)
-
-  await page.getByRole('button', { name: 'Product not found' }).click()
-  const last = await page.evaluate(() => (window.__signals ?? []).at(-1))
-  expect((last as { kind?: string }).kind).toBe('error')
-  expect((last as { traceId?: string }).traceId).not.toBe(pageloadTrace)
-})
-
-test('an unknown path renders the not-found page', async ({ page }) => {
-  await page.goto('/')
-  await page.getByRole('link', { name: 'Not found' }).click()
-  await expect(page).toHaveURL(/\/404$/)
-  await expect(page.getByText('No route matches')).toBeVisible()
-
-  // the 404 is reported to Uptrace as a PageNotFound error
-  const last = await page.evaluate(() => (window.__signals ?? []).at(-1))
-  expect(last).toMatchObject({ kind: 'error', errorType: 'PageNotFound' })
-})
-
-// Both unmatched paths hit the same catch-all route, so NotFound stays mounted and
-// only its pathname changes — the report must not be guarded per mount.
-test('each unmatched path reports its own PageNotFound error', async ({ page }) => {
-  await page.goto('/nope')
-  await expect(page.getByText('No route matches')).toBeVisible()
-
-  // Scoped to the nav: the inspector also renders a "Page not found: /nope" link.
-  await page.locator('a.nav__link[href="/404"]').click()
-  await expect(page).toHaveURL(/\/404$/)
-
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        (window.__signals ?? [])
-          .filter((s) => (s as { errorType?: string }).errorType === 'PageNotFound')
-          .map((s) => (s as { label?: string }).label),
-      ),
-    )
-    .toEqual(['Page not found: /nope', 'Page not found: /404'])
-})
-
-test('the redirect route bounces to home', async ({ page }) => {
-  await page.goto('/')
-  await page.getByRole('link', { name: 'Redirect' }).click()
-  await expect(page).toHaveURL(/\/$/)
-  await expect(page.getByRole('heading', { name: 'Todos' })).toBeVisible()
+  // A new trace, not a continuation of the pageload one.
+  const pageload = txns.find((t) => t.op === 'pageload')!
+  const navigation = txns.find((t) => t.op === 'navigation')!
+  expect(navigation.traceId).not.toBe(pageload.traceId)
 })
