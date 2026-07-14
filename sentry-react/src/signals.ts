@@ -27,12 +27,15 @@ export interface SignalRecord {
 let snapshot: SignalRecord | null = null
 const listeners = new Set<() => void>()
 
-// push records the newest signal, mirrors it to window.__signals (created on
-// first use, for tests), and notifies subscribers.
+// push records the newest signal, notifies subscribers, and in dev also mirrors it
+// to window.__signals for the tests. That mirror is test scaffolding and grows
+// unbounded, so Vite strips it from the production build; the UI reads the store.
 export function push(record: SignalRecord): void {
   snapshot = record
-  window.__signals = window.__signals ?? []
-  window.__signals.push(record)
+  if (import.meta.env.DEV) {
+    window.__signals = window.__signals ?? []
+    window.__signals.push(record)
+  }
   for (const listener of listeners) {
     listener()
   }
