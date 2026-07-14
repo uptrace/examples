@@ -44,6 +44,27 @@ test('an unknown path renders the not-found page', async ({ page }) => {
   expect(last).toMatchObject({ kind: 'error', errorType: 'PageNotFound' })
 })
 
+// Both unmatched paths hit the same catch-all route, so NotFound stays mounted and
+// only its pathname changes — the report must not be guarded per mount.
+test('each unmatched path reports its own PageNotFound error', async ({ page }) => {
+  await page.goto('/nope')
+  await expect(page.getByText('No route matches')).toBeVisible()
+
+  // Scoped to the nav: the inspector also renders a "Page not found: /nope" link.
+  await page.locator('a.nav__link[href="/404"]').click()
+  await expect(page).toHaveURL(/\/404$/)
+
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (window.__signals ?? [])
+          .filter((s) => (s as { errorType?: string }).errorType === 'PageNotFound')
+          .map((s) => (s as { label?: string }).label),
+      ),
+    )
+    .toEqual(['Page not found: /nope', 'Page not found: /404'])
+})
+
 test('the redirect route bounces to home', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('link', { name: 'Redirect' }).click()

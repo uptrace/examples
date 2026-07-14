@@ -7,13 +7,15 @@ import { reportNamedError } from '../telemetry'
 // trackable (not just a silent navigation).
 export function NotFound() {
   const { pathname } = useLocation()
-  const reported = useRef(false)
+  const reported = useRef<string | null>(null)
 
-  // Report once per view. The ref guards against React StrictMode's double-invoke
-  // in dev; a real second visit remounts the page and reports again.
+  // Report once per path, not once per mount: every unmatched path renders this
+  // same catch-all route, so navigating between two of them keeps the component
+  // mounted. Remembering the reported path still absorbs StrictMode's dev
+  // double-invoke, which re-runs the effect with the pathname unchanged.
   useEffect(() => {
-    if (reported.current) return
-    reported.current = true
+    if (reported.current === pathname) return
+    reported.current = pathname
     reportNamedError('PageNotFound', `Page not found: ${pathname}`)
   }, [pathname])
 
