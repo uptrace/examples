@@ -5,20 +5,18 @@
 import * as Sentry from '@sentry/react'
 import { push } from './signals'
 
+// Base URL of the Uptrace UI. Optional: without it the badge still shows the id.
+const UPTRACE_URL = import.meta.env.VITE_UPTRACE_URL
+
+// Project id, taken from the last path segment of the DSN, needed for trace links.
+const PROJECT_ID = projectIdFromDsn(import.meta.env.VITE_SENTRY_DSN)
+
 // pageRoot is the current page's root span (the pageload/navigation transaction).
 // Interactions nest under it; it is refreshed on every navigation.
 let pageRoot: Sentry.Span | undefined
 
 // Listeners notified whenever pageRoot changes, i.e. once per pageload/navigation.
 const pageTraceListeners = new Set<() => void>()
-
-// setPageRoot records the new page root and notifies the UI subscribed to it.
-function setPageRoot(span: Sentry.Span): void {
-  pageRoot = span
-  for (const listener of pageTraceListeners) {
-    listener()
-  }
-}
 
 // Guards against a second spanStart listener (duplicate imports / HMR).
 let pageRootTrackingInstalled = false
@@ -49,24 +47,12 @@ export function installPageRootTracking(): void {
   }
 }
 
-// nested runs a span as a child transaction of the page root, so the interaction
-// joins the page's tree instead of becoming a sibling root (which Uptrace drops).
-// parentSpan works even after the pageload transaction ended: only its spanContext
-// is read. Falls back to the active span/scope before the first pageload span.
-function nested<T>(options: Parameters<typeof Sentry.startSpan>[0], cb: (span: Sentry.Span) => T): T {
-  return Sentry.startSpan({ ...options, parentSpan: pageRoot, forceTransaction: true }, cb)
-}
-
-// Base URL of the Uptrace UI. Optional: without it the badge still shows the id.
-const UPTRACE_URL = import.meta.env.VITE_UPTRACE_URL
-
-// Project id, taken from the last path segment of the DSN, needed for trace links.
-const PROJECT_ID = projectIdFromDsn(import.meta.env.VITE_SENTRY_DSN)
-
-// breadcrumb records an action so it appears in the breadcrumb trail of any
-// event later sent on this trace.
-export function breadcrumb(message: string): void {
-  Sentry.addBreadcrumb({ category: 'signal', message, level: 'info' })
+// setPageRoot records the new page root and notifies the UI subscribed to it.
+function setPageRoot(span: Sentry.Span): void {
+  pageRoot = span
+  for (const listener of pageTraceListeners) {
+    listener()
+  }
 }
 
 // getPageTraceId returns the trace every signal on this page attaches to. Null only
@@ -111,6 +97,29 @@ function projectIdFromDsn(dsn: string | undefined): string | null {
 // issues instead of one repeated error.
 export type ErrorType = 'Error' | 'TypeError' | 'RangeError' | 'SyncError'
 
+// reportError captures one exception of a fixed demo kind (the home Errors panel).
+export function reportError(type: ErrorType): void {
+  breadcrumb(`Reporting a ${type}`)
+  captureAppError(type, buildError(type))
+}
+
+// reportNamedError reports an error with a custom exception name and message (the
+// per-route error buttons). Distinct names become distinct issues in Uptrace.
+export function reportNamedError(name: string, message: string): void {
+  breadcrumb(`Reporting ${name}: ${message}`)
+  captureAppError(name, Object.assign(new Error(message), { name }))
+}
+
+// captureAppError captures err inside its own span, a child of the page root. No op
+// is set, so Uptrace names the span "error: <type>" instead of prefixing it.
+function captureAppError(type: string, err: Error): void {
+  const { traceId, spanId } = nested({ name: `error: ${type}` }, (span) => {
+    Sentry.captureException(err)
+    return span.spanContext()
+  })
+  push({ kind: 'error', label: err.message, errorType: type, spanId, traceId })
+}
+
 // buildError constructs a fresh error of the requested kind so its stack points
 // at the app.
 function buildError(type: ErrorType): Error {
@@ -127,29 +136,6 @@ function buildError(type: ErrorType): Error {
     default:
       return new Error('Example error')
   }
-}
-
-// captureAppError captures err inside its own span, a child of the page root. No op
-// is set, so Uptrace names the span "error: <type>" instead of prefixing it.
-function captureAppError(type: string, err: Error): void {
-  const { traceId, spanId } = nested({ name: `error: ${type}` }, (span) => {
-    Sentry.captureException(err)
-    return span.spanContext()
-  })
-  push({ kind: 'error', label: err.message, errorType: type, spanId, traceId })
-}
-
-// reportError captures one exception of a fixed demo kind (the home Errors panel).
-export function reportError(type: ErrorType): void {
-  breadcrumb(`Reporting a ${type}`)
-  captureAppError(type, buildError(type))
-}
-
-// reportNamedError reports an error with a custom exception name and message (the
-// per-route error buttons). Distinct names become distinct issues in Uptrace.
-export function reportNamedError(name: string, message: string): void {
-  breadcrumb(`Reporting ${name}: ${message}`)
-  captureAppError(name, Object.assign(new Error(message), { name }))
 }
 
 // Todo is one item in the Todos panel. createdAt (ms epoch) records when it was
@@ -247,4 +233,18 @@ export async function sendRequest(kind: RequestKind): Promise<void> {
       push({ kind: 'error', label: err.message, errorType: err.name, spanId, traceId })
     }
   })
+}
+
+// nested runs a span as a child transaction of the page root, so the interaction
+// joins the page's tree instead of becoming a sibling root (which Uptrace drops).
+// parentSpan works even after the pageload transaction ended: only its spanContext
+// is read. Falls back to the active span/scope before the first pageload span.
+function nested<T>(options: Parameters<typeof Sentry.startSpan>[0], cb: (span: Sentry.Span) => T): T {
+  return Sentry.startSpan({ ...options, parentSpan: pageRoot, forceTransaction: true }, cb)
+}
+
+// breadcrumb records an action so it appears in the breadcrumb trail of any
+// event later sent on this trace.
+export function breadcrumb(message: string): void {
+  Sentry.addBreadcrumb({ category: 'signal', message, level: 'info' })
 }

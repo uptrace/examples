@@ -48,6 +48,11 @@ behavior changes, update it in the same change.
   root span per trace — sibling roots would be dropped from the trace tree.
 - TypeScript with `strict` on. JS/TS comments use `//` line comments, including
   comments for exported types and functions. Comment only what the code cannot say.
+- Order code top-down, as the Go backend does: module doc, imports, package-level
+  consts, then the entry points, then their callees below them — a helper goes under
+  the function that calls it, never above. A const or type used by exactly one
+  function sits directly above that function. Read a file top to bottom and the call
+  stack unfolds in order.
 - The UI is four files grouped by what they do — `shell.tsx` (frame), `inspector.tsx`
   (bottom readout), `panels.tsx` (the demo controls), `pages.tsx` (the routes) — not
   one file per component. An example is read top to bottom; keep it that way.

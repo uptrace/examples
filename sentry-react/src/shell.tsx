@@ -7,6 +7,27 @@ import { getPageTraceId, subscribePageTrace, uptraceUrl } from './telemetry'
 import { useSettledDelivery } from './delivery'
 import { Inspector } from './inspector'
 
+// Layout is the persistent frame: the nav rail, the current-trace badge above the
+// routed content, and the inspector pinned to the bottom.
+export function Layout() {
+  return (
+    <div className="shell">
+      <div className="layout">
+        <NavBar />
+        <div className="main">
+          <div className="statusbar">
+            <TraceBadge />
+          </div>
+          <main className="content">
+            <Outlet />
+          </main>
+        </div>
+      </div>
+      <Inspector />
+    </div>
+  )
+}
+
 // The demo routes. /products/42 uses an arbitrary sample id: Uptrace names its trace
 // by the pattern (/products/:id), not the id. The last is an unmatched path.
 const ROUTES = [
@@ -61,25 +82,6 @@ function TraceBadge() {
       <span className="trace-badge__label">current trace</span>
       <code className="trace-badge__id">{traceId ?? '—'}</code>
       {linkNode}
-    </div>
-  )
-}
-
-export function Layout() {
-  return (
-    <div className="shell">
-      <div className="layout">
-        <NavBar />
-        <div className="main">
-          <div className="statusbar">
-            <TraceBadge />
-          </div>
-          <main className="content">
-            <Outlet />
-          </main>
-        </div>
-      </div>
-      <Inspector />
     </div>
   )
 }

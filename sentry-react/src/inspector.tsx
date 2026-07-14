@@ -6,58 +6,6 @@ import { uptraceUrl } from './telemetry'
 import { useSettledDelivery } from './delivery'
 import type { DeliveryStatus as Status } from './delivery'
 
-// uptraceKind maps the app's control type to the signal type Uptrace actually stores,
-// so the pill matches what you find there: an HTTP request is just a span.
-const uptraceKind: Record<SignalRecord['kind'], string> = {
-  span: 'span',
-  http: 'span',
-  error: 'error',
-}
-
-// describe turns a record into the one-line summary the Inspector shows.
-function describe(r: SignalRecord): string {
-  switch (r.kind) {
-    case 'span':
-      return `span "${r.label}", ${r.durationMs}ms`
-    case 'http':
-      return `${r.label}, ${r.detail} in ${r.durationMs}ms`
-    case 'error':
-      return `${r.errorType}: "${r.label}"`
-  }
-}
-
-function deliveryMessage(status: Status): string {
-  switch (status.state) {
-    case 'idle':
-      return 'Waiting for the first event…'
-    case 'sending':
-      return 'Connecting to Uptrace…'
-    case 'ok':
-      return 'Connected to Uptrace ✓'
-    case 'failed':
-      // A statusCode means the host answered but rejected the data; none means we
-      // never reached it, so name the host — a wrong DSN host is the usual cause.
-      return status.statusCode
-        ? `Uptrace rejected the data (HTTP ${status.statusCode})`
-        : `Can't reach Uptrace at ${status.host ?? 'the ingest server'}`
-  }
-}
-
-// DeliveryStatus makes a broken DSN/host visible: it stays quiet until an envelope
-// fails to reach Uptrace (delivery.ts observes every send).
-function DeliveryStatus() {
-  const settled = useSettledDelivery()
-  if (settled?.state !== 'failed') {
-    return null
-  }
-  return (
-    <div className="delivery" data-state={settled.state}>
-      <span className="delivery__dot" aria-hidden="true" />
-      <span className="delivery__text">{deliveryMessage(settled)}</span>
-    </div>
-  )
-}
-
 // Inspector shows what the last control sent on the left and the delivery status on
 // the right, so "what was sent" and "did it arrive" sit together. It links the signal
 // only once delivery has settled ok: an envelope that never arrived has nothing to
@@ -88,4 +36,57 @@ export function Inspector() {
       <DeliveryStatus />
     </aside>
   )
+}
+
+// uptraceKind maps the app's control type to the signal type Uptrace actually stores,
+// so the pill matches what you find there: an HTTP request is just a span.
+const uptraceKind: Record<SignalRecord['kind'], string> = {
+  span: 'span',
+  http: 'span',
+  error: 'error',
+}
+
+// describe turns a record into the one-line summary the Inspector shows.
+function describe(r: SignalRecord): string {
+  switch (r.kind) {
+    case 'span':
+      return `span "${r.label}", ${r.durationMs}ms`
+    case 'http':
+      return `${r.label}, ${r.detail} in ${r.durationMs}ms`
+    case 'error':
+      return `${r.errorType}: "${r.label}"`
+  }
+}
+
+// DeliveryStatus makes a broken DSN/host visible: it stays quiet until an envelope
+// fails to reach Uptrace (delivery.ts observes every send).
+function DeliveryStatus() {
+  const settled = useSettledDelivery()
+  if (settled?.state !== 'failed') {
+    return null
+  }
+  return (
+    <div className="delivery" data-state={settled.state}>
+      <span className="delivery__dot" aria-hidden="true" />
+      <span className="delivery__text">{deliveryMessage(settled)}</span>
+    </div>
+  )
+}
+
+// deliveryMessage is the line shown when a send fails.
+function deliveryMessage(status: Status): string {
+  switch (status.state) {
+    case 'idle':
+      return 'Waiting for the first event…'
+    case 'sending':
+      return 'Connecting to Uptrace…'
+    case 'ok':
+      return 'Connected to Uptrace ✓'
+    case 'failed':
+      // A statusCode means the host answered but rejected the data; none means we
+      // never reached it, so name the host — a wrong DSN host is the usual cause.
+      return status.statusCode
+        ? `Uptrace rejected the data (HTTP ${status.statusCode})`
+        : `Can't reach Uptrace at ${status.host ?? 'the ingest server'}`
+  }
 }
