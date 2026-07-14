@@ -222,10 +222,13 @@ export function completeTodo(todo: Todo): void {
     parentSpan: pageRoot,
     forceTransaction: true,
   })
-  const { spanId } = span.spanContext()
+  // Both ids come from the span we just sent, never from the surrounding scope: the
+  // deep link pairs them, so a scope-derived trace id could name a trace this span
+  // does not live in.
+  const { spanId, traceId } = span.spanContext()
   span.end()
   const durationMs = Date.now() - todo.createdAt
-  push({ kind: 'span', label: `completed todo: ${todo.text}`, durationMs, spanId, traceId: currentTraceId() })
+  push({ kind: 'span', label: `completed todo: ${todo.text}`, durationMs, spanId, traceId })
 }
 
 // RequestKind is the three demo endpoints the HTTP panel can call.
@@ -270,6 +273,10 @@ export async function sendRequest(kind: RequestKind): Promise<void> {
         spanId,
         traceId,
       })
+      // The exception is on its way to Uptrace, so record it as an error signal too
+      // — as the non-OK path above does — or the Inspector would only show the span.
+      const err = e instanceof Error ? e : new Error(String(e))
+      push({ kind: 'error', label: err.message, errorType: err.name, spanId, traceId })
     }
   })
 }
