@@ -1,10 +1,10 @@
 import { NavLink } from 'react-router-dom'
 
-// The demo routes, shown as a plain link list (not tabs), like the reference app's
-// layout. Each is a real page; navigating mints a new trace named by its route
-// pattern. /products/42 uses an arbitrary sample id: Uptrace names its trace by
-// the pattern (/products/:id), not the id, and the page's "Next product" link lets
-// you confirm other ids group the same way. The last is an unmatched path (NotFound).
+// The demo routes, each a real page; navigating mints a new trace named by its
+// route pattern. /products/42 uses an arbitrary sample id: Uptrace names its trace
+// by the pattern (/products/:id), not the id, and the page's "Next product" link
+// lets you confirm other ids group the same way. The last is an unmatched path
+// (NotFound).
 const ROUTES = [
   { to: '/', label: 'Home' },
   { to: '/products/42', label: 'Products' },

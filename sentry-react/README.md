@@ -15,19 +15,16 @@ in-page inspector, so you can watch each signal type and then find it in Uptrace
 - **Errors** — one button per type (`Error`, `TypeError`, `RangeError`,
   `SyncError`); each is a distinct, findable issue.
 - **Routes** — a side nav lists the app's routes (Products, Categories, News,
-  Settings, Redirect, Not found); each navigation mints a new trace named by its
-  pattern (`/products/:id`, `/categories/*`), and unmatched paths render NotFound.
+  Settings, Redirect, Not found). Each navigation mints a new trace named by its
+  route **pattern** (`/products/:id`, `/categories/*`), so Uptrace groups
+  navigations by route rather than by concrete URL. An unmatched path renders
+  NotFound, which reports itself as a `PageNotFound` error.
 - A **trace badge** shows the current trace id (and a link to it if you set
   `VITE_UPTRACE_URL`); a bottom **inspector** shows what the last control sent,
   whether it reached Uptrace (its **delivery status**), and (when
   `VITE_UPTRACE_URL` is set) links straight to it in Uptrace — to the exact span
   for a custom span (`/traces/<traceId>/<spanId>`), or to the trace for other
   signals.
-
-The side nav lists the app's routes (`/products/:id`, `/categories/*`, `/news`,
-`/settings`, a redirect, and a not-found catch-all). Each navigation mints a
-**new trace** named by its route pattern, so Uptrace groups navigations by route
-rather than by concrete URL.
 
 > Session Replay is intentionally not included: Uptrace's Sentry ingest does not
 > confirm replay support, and this example only demonstrates signals you can find
@@ -122,6 +119,7 @@ that read envelopes intercept them in the browser.
 | `src/pages/Console.tsx` | The home route: the Todos, HTTP, and Errors panels. |
 | `src/pages/ProductsPage.tsx`, `CategoriesPage.tsx`, `NotFound.tsx` | The `/products/:id`, `/categories/*`, and catch-all routes. |
 | `src/components/RoutePage.tsx` | Shared sub-route body: a subtitle plus per-route error buttons. |
+| `src/components/Layout.tsx` | Persistent shell: side nav, trace badge, routed content, inspector. |
 | `src/components/NavBar.tsx` | Side nav that switches routes. |
 | `src/components/*Panel.tsx` | One panel per demo: todos, HTTP, errors. |
 | `src/components/Inspector.tsx` | Shows what the last control sent and its trace id. |
