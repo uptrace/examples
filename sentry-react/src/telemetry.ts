@@ -1,18 +1,12 @@
-// telemetry.ts — every Sentry SDK call the app makes lives here, isolated from
-// the UI. Nothing here starts a new trace: every signal attaches to the current
-// pageload/navigation trace and is NESTED under that page's root span, so Uptrace
-// (which shows one root per trace) draws the whole page as a single tree. Each
-// call also records a breadcrumb and pushes a record to the signals store for the
-// in-page Inspector.
+// telemetry.ts — every Sentry SDK call the app makes. Nothing here starts a trace:
+// each signal attaches to the current pageload/navigation trace, nested under that
+// page's root span, so Uptrace (which keeps one root per trace) draws the page as a
+// single tree. Each call also leaves a breadcrumb and pushes to the signals store.
 import * as Sentry from '@sentry/react'
 import { push } from './signals'
 
-// pageRoot holds the current page's root span — the pageload/navigation transaction
-// the browser-tracing integration opened. Interactions nest under it so the whole
-// page is one tree with a single root in Uptrace (which shows only one root per
-// trace). Refreshed on every later navigation via the spanStart hook; the very
-// first pageload span is seeded separately (see installPageRootTracking) because
-// it starts synchronously during Sentry.init, before any hook can observe it.
+// pageRoot is the current page's root span (the pageload/navigation transaction).
+// Interactions nest under it; it is refreshed on every navigation.
 let pageRoot: Sentry.Span | undefined
 
 // Listeners notified whenever pageRoot changes, i.e. once per pageload/navigation.
@@ -26,20 +20,12 @@ function setPageRoot(span: Sentry.Span): void {
   }
 }
 
-// pageRootTrackingInstalled guards installPageRootTracking against running twice
-// (e.g. duplicate imports/HMR), which would otherwise attach a second spanStart
-// listener.
+// Guards against a second spanStart listener (duplicate imports / HMR).
 let pageRootTrackingInstalled = false
 
-// installPageRootTracking wires up tracking of the current page's root span. Call
-// it once right after Sentry.init (from instrument.ts). Two mechanisms are needed:
-//  - The spanStart hook catches every LATER pageload/navigation span (e.g. on
-//    route changes), since those start after this function has already run.
-//  - The initial pageload span is a special case: the reactRouterV7 browser-
-//    tracing integration starts it synchronously inside Sentry.init's
-//    afterAllSetup, so its spanStart fires before this listener exists and the
-//    hook alone would never see it. It is seeded directly from the still-active
-//    span right after subscribing.
+// installPageRootTracking tracks each page's root span. Call it once, right after
+// Sentry.init. The spanStart hook catches every later navigation span; the initial
+// pageload span needs the separate seed below.
 export function installPageRootTracking(): void {
   if (pageRootTrackingInstalled) return
   pageRootTrackingInstalled = true
@@ -51,9 +37,8 @@ export function installPageRootTracking(): void {
     }
   })
 
-  // The initial pageload span already started (and emitted spanStart) synchronously
-  // inside Sentry.init, before this listener existed, so the hook above never saw
-  // it. Seed pageRoot from the still-active pageload idle span.
+  // The pageload span started synchronously inside Sentry.init — before the hook
+  // above existed, so it never saw it. Seed from the still-active span.
   const active = Sentry.getActiveSpan()
   if (active) {
     const root = Sentry.getRootSpan(active)
@@ -64,18 +49,15 @@ export function installPageRootTracking(): void {
   }
 }
 
-// nested runs a span as a child transaction of the current page root, so the
-// interaction attaches under the page's tree instead of becoming a sibling root.
-// forceTransaction makes it its own sent envelope; parentSpan stamps the page
-// root's trace id and span id onto it (works even after the pageload transaction
-// ended — only its spanContext is read). When pageRoot is undefined (before the
-// first pageload span), it falls back to the active span/scope: today's behavior.
+// nested runs a span as a child transaction of the page root, so the interaction
+// joins the page's tree instead of becoming a sibling root (which Uptrace drops).
+// parentSpan works even after the pageload transaction ended: only its spanContext
+// is read. Falls back to the active span/scope before the first pageload span.
 function nested<T>(options: Parameters<typeof Sentry.startSpan>[0], cb: (span: Sentry.Span) => T): T {
   return Sentry.startSpan({ ...options, parentSpan: pageRoot, forceTransaction: true }, cb)
 }
 
-// Base URL of the Uptrace UI (e.g. http://localhost:5000), used to build a link
-// to the current trace. Optional: without it the badge still shows the trace id.
+// Base URL of the Uptrace UI. Optional: without it the badge still shows the id.
 const UPTRACE_URL = import.meta.env.VITE_UPTRACE_URL
 
 // Project id, taken from the last path segment of the DSN, needed for trace links.
@@ -87,26 +69,21 @@ export function breadcrumb(message: string): void {
   Sentry.addBreadcrumb({ category: 'signal', message, level: 'info' })
 }
 
-// getPageTraceId returns the trace every signal on this page attaches to: the trace
-// of the page root itself, so the badge names the same trace the tree is built under.
-// Null only before the first pageload span exists.
+// getPageTraceId returns the trace every signal on this page attaches to. Null only
+// before the first pageload span exists.
 export function getPageTraceId(): string | null {
   return pageRoot?.spanContext().traceId ?? null
 }
 
-// subscribePageTrace registers a listener for page-root changes (one per navigation),
-// so the UI can read the trace id from the store instead of reaching into Sentry's
-// ambient state at a moment it hopes is late enough.
+// subscribePageTrace registers a listener for page-root changes (one per navigation).
 export function subscribePageTrace(listener: () => void): () => void {
   pageTraceListeners.add(listener)
   return () => pageTraceListeners.delete(listener)
 }
 
-// uptraceUrl builds a project-scoped link into the Uptrace UI for a trace, and
-// deep-links to a specific span when spanId is given by adding it as a path
-// segment (/traces/<traceId>/<spanId>) — the form the Uptrace explore UI uses;
-// the ?span_id= query param is ignored there. Returns null when the UI URL, the
-// project id, or the trace id is unavailable.
+// uptraceUrl links into the Uptrace UI: a trace, or a span within it when spanId is
+// given (/traces/<traceId>/<spanId> — the explore UI ignores ?span_id=). Null when
+// the UI URL, project id or trace id is missing.
 export function uptraceUrl(traceId: string | null, spanId?: string): string | null {
   if (!UPTRACE_URL || !PROJECT_ID || !traceId) {
     return null
@@ -152,10 +129,8 @@ function buildError(type: ErrorType): Error {
   }
 }
 
-// captureAppError captures err inside its own span "error: <type>" (a child of the
-// page root, so it attaches to the current route's trace) and records the signal.
-// No op is set, so Uptrace names the span "error: <type>" rather than prefixing it
-// (e.g. "ui.error: ..."); its Logs & Errors entry links to that span, not the root.
+// captureAppError captures err inside its own span, a child of the page root. No op
+// is set, so Uptrace names the span "error: <type>" instead of prefixing it.
 function captureAppError(type: string, err: Error): void {
   const { traceId, spanId } = nested({ name: `error: ${type}` }, (span) => {
     Sentry.captureException(err)
@@ -192,9 +167,7 @@ export interface Todo {
 // nextTodoId hands out a stable id per todo for the list's React keys.
 let nextTodoId = 1
 
-// createTodo records a new todo and sends an instant "created todo: <text>" span,
-// so adding a todo shows up immediately. No op is set, so Uptrace names it by that
-// label. The span nests under the page root.
+// createTodo sends an instant "created todo: <text>" span, nested under the page root.
 export function createTodo(text: string): Todo {
   const createdAt = Date.now()
   breadcrumb(`Created todo "${text}"`)
@@ -209,9 +182,8 @@ export function createTodo(text: string): Todo {
   return { id: nextTodoId++, text, createdAt, traceId, spanId }
 }
 
-// completeTodo sends a "completed todo: <text>" span back-dated to the todo's
-// creation (startTime), so its duration is how long the todo was open. It nests
-// under the page root.
+// completeTodo sends a "completed todo: <text>" span back-dated to the todo's creation,
+// so its duration is how long the todo was open.
 export function completeTodo(todo: Todo): void {
   breadcrumb(`Completed todo "${todo.text}"`)
   const span = Sentry.startInactiveSpan({
@@ -220,9 +192,8 @@ export function completeTodo(todo: Todo): void {
     parentSpan: pageRoot,
     forceTransaction: true,
   })
-  // Both ids come from the span we just sent, never from the surrounding scope: the
-  // deep link pairs them, so a scope-derived trace id could name a trace this span
-  // does not live in.
+  // Both ids come from the span we just sent: the deep link pairs them, so a
+  // scope-derived trace id could name a trace this span does not live in.
   const { spanId, traceId } = span.spanContext()
   span.end()
   const durationMs = Date.now() - todo.createdAt
@@ -232,11 +203,10 @@ export function completeTodo(todo: Todo): void {
 // RequestKind is the three demo endpoints the HTTP panel can call.
 export type RequestKind = 'ok' | 'slow' | 'fail'
 
-// sendRequest fetches a dev endpoint inside a request span of its own, which the
-// SDK's auto-instrumented http.client span then nests under: the auto span alone
-// would be a sibling root once the pageload span has ended (Uptrace keeps one root
-// per trace), and it gives us the span id the Inspector links and the duration it
-// shows. It treats a non-OK response as a failure worth capturing as an error too.
+// sendRequest fetches a dev endpoint inside a request span of its own, which the SDK's
+// auto-instrumented http.client span then nests under: alone, that span would be a
+// sibling root once the pageload span has ended. A non-OK response is captured as an
+// error too.
 export async function sendRequest(kind: RequestKind): Promise<void> {
   breadcrumb(`Sending ${kind} request`)
   const startedAt = performance.now()
@@ -244,8 +214,7 @@ export async function sendRequest(kind: RequestKind): Promise<void> {
     const { spanId, traceId } = span.spanContext()
     try {
       const res = await fetch(`/api/${kind}`)
-      // Record the status on the request span (semconv key), so it's queryable in
-      // Uptrace as http.response.status_code and visible on the span we link to.
+      // Semconv key, so the status is queryable in Uptrace.
       span.setAttribute('http.response.status_code', res.status)
       const durationMs = Math.round(performance.now() - startedAt)
       push({

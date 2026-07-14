@@ -1,8 +1,6 @@
-// Sentry initialization for the browser. Imported FIRST in main.tsx so Sentry
-// installs its instrumentation before React renders.
-//
-// The DSN is read from `VITE_SENTRY_DSN`. Copy `.env.example` to `.env` and
-// paste the Sentry DSN from your Uptrace project. See README.md for details.
+// Sentry initialization — the only Uptrace-specific code in the app. Imported FIRST
+// in main.tsx so instrumentation is in place before React renders. Point the DSN at
+// your Uptrace project: copy .env.example to .env (see README.md).
 import * as Sentry from '@sentry/react'
 import { useEffect } from 'react'
 import { createRoutesFromChildren, matchRoutes, useLocation, useNavigationType } from 'react-router-dom'
@@ -12,7 +10,7 @@ import { installPageRootTracking } from './telemetry'
 const dsn = import.meta.env.VITE_SENTRY_DSN
 
 if (!dsn) {
-  // Make the misconfiguration loud instead of silently dropping every event.
+  // Without a DSN the SDK is inert, so say so instead of dropping every event.
   console.warn(
     'VITE_SENTRY_DSN is not set. Copy .env.example to .env and paste your ' +
       'Uptrace Sentry DSN, then restart `npm run dev`.',
@@ -22,14 +20,12 @@ if (!dsn) {
 Sentry.init({
   dsn,
 
-  // Wrap the standard fetch transport so the UI can show whether each envelope
-  // actually reached the ingest server (see src/delivery.ts). It only observes.
+  // Observes each send so the UI can show whether envelopes arrive; it wraps the
+  // standard fetch transport and does not change delivery (src/delivery.ts).
   transport: makeReportingTransport,
 
-  // React Router v7 tracing: opens a pageload trace on load and a navigation
-  // trace on each route change, named by the parameterized route (/products/:id).
-  // This is the only place traces are started — signals attach to the current
-  // trace; the app never calls startNewTrace.
+  // Opens a pageload trace on load and a navigation trace per route change, named by
+  // route pattern (/products/:id). The app never starts a trace itself.
   integrations: [
     Sentry.reactRouterV7BrowserTracingIntegration({
       useEffect,
@@ -40,21 +36,17 @@ Sentry.init({
     }),
   ],
 
-  // Sample 100% of traces. Lower this in production; for a demo we want to see
-  // every interaction in Uptrace.
+  // Sample everything: this is a demo. Lower it in production.
   tracesSampleRate: 1.0,
 
-  // Attach a default user/IP so events are easier to find. Turn off to avoid PII.
+  // Attaches user/IP to events. Turn off to avoid PII.
   sendDefaultPii: true,
 
-  // Surfaces as an attribute on every event so you can filter this example's data.
+  // An attribute on every event, so you can filter this example's data.
   environment: 'development',
 })
 
-// Track the pageload/navigation root span so telemetry.ts can nest interactions
-// under it (Uptrace shows only one root per trace). Installed here, right after
-// init: its spanStart listener catches later navigation spans, and it also seeds
-// the root from the still-active span to catch the initial pageload span, which
-// already started (synchronously, inside Sentry.init) before the listener could
-// see it.
+// Track each page's root span so signals nest under it (Uptrace keeps one root per
+// trace). Must run right after init to catch the pageload span Sentry.init just
+// started — see installPageRootTracking.
 installPageRootTracking()

@@ -1,12 +1,10 @@
-// signals.ts — a tiny framework-free store holding the most recent telemetry
-// signal the app produced, so the in-page Inspector can show "what was just
-// sent" without the devtools Network tab. Every telemetry.ts feature call pushes
-// here.
+// signals.ts — a framework-free store holding the last signal the app sent, so the
+// Inspector can show it without the devtools Network tab. telemetry.ts pushes here.
 
 // SignalKind is which signal type a record describes.
 export type SignalKind = 'span' | 'http' | 'error'
 
-// SignalRecord is one produced signal, shaped for display and for tests.
+// SignalRecord is one produced signal, shaped for display.
 export interface SignalRecord {
   kind: SignalKind
   // label is the human summary: the span/error name or the request line.

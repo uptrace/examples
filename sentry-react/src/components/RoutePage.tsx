@@ -7,10 +7,8 @@ export interface RouteError {
   message: string
 }
 
-// RoutePage is the shared body for the demo sub-routes: a one-line subtitle (which
-// names the route) plus one button per domain error. Each error attaches to this
-// route's trace (and deep-links to its span in the inspector). extra is an optional
-// slot rendered under the subtitle (e.g. the dynamic route's "Next product" link).
+// RoutePage is the shared body for the demo sub-routes: a subtitle plus one button
+// per domain error, each attaching to this route's trace. extra renders below it.
 export function RoutePage({
   subtitle,
   errors,

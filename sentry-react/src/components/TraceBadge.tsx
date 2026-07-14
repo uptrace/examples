@@ -1,10 +1,5 @@
-// TraceBadge shows the trace id of the current page (pageload or navigation) and —
-// once telemetry is confirmed reaching Uptrace — a link to that trace. Both values
-// come from stores, so the badge re-renders when the page root changes or delivery
-// settles, with no effects of its own.
-//
-// The link waits for a settled ok so it never points at a trace that failed to
-// arrive, and never flashes in and out while an envelope is in flight.
+// TraceBadge names the current page's trace, and links to it only once delivery has
+// settled ok — so the link never points at a trace that never arrived.
 import { useSyncExternalStore } from 'react'
 import type { ReactNode } from 'react'
 import { getPageTraceId, subscribePageTrace, uptraceUrl } from '../telemetry'
@@ -15,8 +10,6 @@ export function TraceBadge() {
   const settled = useSettledDelivery()
   const url = uptraceUrl(traceId)
 
-  // The connection status lives in the bottom bar (DeliveryStatus); here we only
-  // surface the Uptrace link once delivery has settled on ok.
   let linkNode: ReactNode = null
   if (traceId && !url) {
     linkNode = <span className="trace-badge__label">set VITE_UPTRACE_URL for a link</span>
