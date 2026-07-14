@@ -3,7 +3,7 @@
 // It wraps the standard fetch transport; it only watches send results, it never
 // changes what or how Sentry sends. This is how the app can show "delivered" vs
 // "couldn't reach Uptrace" instead of leaving that only in the Network tab.
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react'
 import * as Sentry from '@sentry/react'
 
 // DeliveryState is the lifecycle of the most recent envelope send.
@@ -35,12 +35,21 @@ const host = hostFromDsn(import.meta.env.VITE_SENTRY_DSN)
 // The single current snapshot. getDeliverySnapshot returns this same reference
 // until emit() replaces it, so useSyncExternalStore does not re-render in a loop.
 let snapshot: DeliveryStatus = { state: 'idle', host }
+
+// The last snapshot that settled (ok/failed), ignoring the transient idle/sending.
+// Every send emits 'sending' first, so UI driven by the live state would flicker on
+// each action: a failure warning would blink out, a link would flash and vanish.
+let settled: DeliveryStatus | null = null
+
 const listeners = new Set<() => void>()
 
 // emit replaces the snapshot and notifies subscribers. `host` is always carried
 // forward so the failure message can name the target.
 function emit(next: { state: DeliveryState; statusCode?: number }): void {
   snapshot = { state: next.state, statusCode: next.statusCode, host }
+  if (snapshot.state === 'ok' || snapshot.state === 'failed') {
+    settled = snapshot
+  }
   for (const listener of listeners) {
     listener()
   }
@@ -57,20 +66,16 @@ export function getDeliverySnapshot(): DeliveryStatus {
   return snapshot
 }
 
-// useSettledDelivery returns the last settled send outcome (ok/failed), ignoring the
-// transient idle/sending, or null before the first one settles. Every send emits
-// 'sending' first, so a component reading the live state would flicker on each action:
-// a failure warning would blink out, a link would flash in and vanish. Read this
-// instead of the raw snapshot whenever the UI reacts to delivery.
-export function useSettledDelivery(): DeliveryStatus | null {
-  const status = useSyncExternalStore(subscribeDelivery, getDeliverySnapshot)
-  const [settled, setSettled] = useState<DeliveryStatus | null>(null)
-  useEffect(() => {
-    if (status.state === 'ok' || status.state === 'failed') {
-      setSettled(status)
-    }
-  }, [status])
+// getSettledSnapshot returns the last settled outcome, or null before the first send
+// settles (stable reference between emits).
+export function getSettledSnapshot(): DeliveryStatus | null {
   return settled
+}
+
+// useSettledDelivery subscribes the UI to that settled outcome. Read it instead of
+// the raw snapshot whenever the UI reacts to delivery.
+export function useSettledDelivery(): DeliveryStatus | null {
+  return useSyncExternalStore(subscribeDelivery, getSettledSnapshot)
 }
 
 // makeReportingTransport wraps the standard fetch transport and reports each

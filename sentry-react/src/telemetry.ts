@@ -15,6 +15,17 @@ import { push } from './signals'
 // it starts synchronously during Sentry.init, before any hook can observe it.
 let pageRoot: Sentry.Span | undefined
 
+// Listeners notified whenever pageRoot changes, i.e. once per pageload/navigation.
+const pageTraceListeners = new Set<() => void>()
+
+// setPageRoot records the new page root and notifies the UI subscribed to it.
+function setPageRoot(span: Sentry.Span): void {
+  pageRoot = span
+  for (const listener of pageTraceListeners) {
+    listener()
+  }
+}
+
 // pageRootTrackingInstalled guards installPageRootTracking against running twice
 // (e.g. duplicate imports/HMR), which would otherwise attach a second spanStart
 // listener.
@@ -36,7 +47,7 @@ export function installPageRootTracking(): void {
   Sentry.getClient()?.on('spanStart', (span) => {
     const { parent_span_id: parentSpanId, op } = Sentry.spanToJSON(span)
     if (!parentSpanId && (op === 'pageload' || op === 'navigation')) {
-      pageRoot = span
+      setPageRoot(span)
     }
   })
 
@@ -48,7 +59,7 @@ export function installPageRootTracking(): void {
     const root = Sentry.getRootSpan(active)
     const op = Sentry.spanToJSON(root).op
     if (op === 'pageload' || op === 'navigation') {
-      pageRoot = root
+      setPageRoot(root)
     }
   }
 }
@@ -76,32 +87,19 @@ export function breadcrumb(message: string): void {
   Sentry.addBreadcrumb({ category: 'signal', message, level: 'info' })
 }
 
-// TraceLink is the current trace id plus an optional deep link to it in Uptrace.
-export interface TraceLink {
-  traceId: string
-  url: string | null
+// getPageTraceId returns the trace every signal on this page attaches to: the trace
+// of the page root itself, so the badge names the same trace the tree is built under.
+// Null only before the first pageload span exists.
+export function getPageTraceId(): string | null {
+  return pageRoot?.spanContext().traceId ?? null
 }
 
-// currentTraceId returns the trace id the next signal will attach to. It prefers
-// the active root span (the idle pageload/navigation transaction); once that has
-// ended it falls back to the propagation context carried in the sentry-trace
-// header, which still names the current page's trace.
-export function currentTraceId(): string | null {
-  const active = Sentry.getActiveSpan()
-  if (active) {
-    return Sentry.getRootSpan(active).spanContext().traceId
-  }
-  const header = Sentry.getTraceData()['sentry-trace']
-  return header ? header.split('-')[0] : null
-}
-
-// currentTraceLink is the current trace id plus a link to it in Uptrace.
-export function currentTraceLink(): TraceLink | null {
-  const traceId = currentTraceId()
-  if (!traceId) {
-    return null
-  }
-  return { traceId, url: uptraceUrl(traceId) }
+// subscribePageTrace registers a listener for page-root changes (one per navigation),
+// so the UI can read the trace id from the store instead of reaching into Sentry's
+// ambient state at a moment it hopes is late enough.
+export function subscribePageTrace(listener: () => void): () => void {
+  pageTraceListeners.add(listener)
+  return () => pageTraceListeners.delete(listener)
 }
 
 // uptraceUrl builds a project-scoped link into the Uptrace UI for a trace, and
