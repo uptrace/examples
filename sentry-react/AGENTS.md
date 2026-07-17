@@ -22,6 +22,13 @@ behavior changes, update it in the same change.
   gitignored — keep `.env.example` as the template and document it in the README.
 - Uptrace ingests the standard Sentry protocol, so there is no Uptrace exporter
   or adapter. If you reach for one, you are doing it wrong.
+- Never reach for `Sentry.logger.*` / `enableLogs`. They emit `log` envelope items,
+  and Uptrace's Sentry ingest handles only `transaction`, `event` and
+  `client_report` — anything else is skipped, so the data is silently dropped (the
+  SDK still reports a successful send). A `logger.*` Logs panel was added and
+  removed once already; do not re-add it. `Sentry.captureMessage()` is the path
+  that works: Uptrace stores a Sentry event carrying a `message` as a log
+  (`event_name=log`, the level normalized into `log_severity`).
 - The app is a small routed single-page app: Vite + React + TypeScript with
   React Router v7, state held in memory (`useState`). There is no separate
   backend — the `/api/ok|slow|fail` endpoints are Vite dev-server middleware
