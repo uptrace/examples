@@ -122,5 +122,5 @@ test dev server a dummy DSN (the SDK is inert without one) and ignores your `.en
 | `src/panels.tsx` | The three demo controls: todos, HTTP, errors. |
 | `src/shell.tsx` | Persistent frame: side nav, trace badge, routed content, inspector. |
 | `src/inspector.tsx` | Bottom bar: what the last control sent, and whether it reached Uptrace. |
-| `src/delivery.ts` / `DeliveryStatus.tsx` | Observe and show whether envelopes reach Uptrace. |
+| `src/delivery.ts` | Observe and show whether envelopes reach Uptrace. |
 | `vite.config.ts` | Dev-server middleware for `/api/ok|slow|fail`. |

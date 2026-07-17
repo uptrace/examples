@@ -59,8 +59,8 @@ function NavBar() {
   )
 }
 
-// TraceBadge names the current page's trace, and links to it only once delivery has
-// settled ok — so the link never points at a trace that never arrived.
+// TraceBadge names the current page's trace, and links to it only once some envelope
+// has reached Uptrace: a check that the connection works, not that this trace landed.
 function TraceBadge() {
   const traceId = useSyncExternalStore(subscribePageTrace, getPageTraceId)
   const settled = useSettledDelivery()

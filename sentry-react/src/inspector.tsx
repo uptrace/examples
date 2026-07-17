@@ -8,8 +8,8 @@ import type { DeliveryStatus as Status } from './delivery'
 
 // Inspector shows what the last control sent on the left and the delivery status on
 // the right, so "what was sent" and "did it arrive" sit together. It links the signal
-// only once delivery has settled ok: an envelope that never arrived has nothing to
-// open in Uptrace.
+// only once some envelope has reached Uptrace: a check that the connection works, not
+// that this signal's own envelope landed.
 export function Inspector() {
   const record = useSyncExternalStore(subscribeSignals, getSignalSnapshot)
   const delivered = useSettledDelivery()?.state === 'ok'

@@ -9,8 +9,8 @@ import { useSettledDelivery } from './delivery'
 export function TodoPanel() {
   const [text, setText] = useState('')
   const [todos, setTodos] = useState<Todo[]>([])
-  // Only link a span once delivery has settled ok: one that never reached Uptrace has
-  // nothing to open there.
+  // Only link a span once some envelope has reached Uptrace: a check that the
+  // connection works, not that this span's own envelope landed.
   const delivered = useSettledDelivery()?.state === 'ok'
 
   function add() {
