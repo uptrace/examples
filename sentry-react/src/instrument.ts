@@ -5,7 +5,6 @@ import * as Sentry from '@sentry/react'
 import { useEffect } from 'react'
 import { createRoutesFromChildren, matchRoutes, useLocation, useNavigationType } from 'react-router-dom'
 import { makeReportingTransport } from './delivery'
-import { installPageRootTracking } from './telemetry'
 
 const dsn = import.meta.env.VITE_SENTRY_DSN
 
@@ -45,8 +44,3 @@ Sentry.init({
   // An attribute on every event, so you can filter this example's data.
   environment: 'development',
 })
-
-// Track each page's root span so signals nest under it (Uptrace keeps one root per
-// trace). Must run right after init to catch the pageload span Sentry.init just
-// started — see installPageRootTracking.
-installPageRootTracking()

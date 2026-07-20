@@ -46,14 +46,29 @@ small Vite dev-server middleware (see [`vite.config.ts`](vite.config.ts)) so
 there is **no separate backend**. These endpoints exist under `npm run dev`; a
 static `vite preview` build does not include them.
 
-### One trace, one tree
+### One trace, several root spans
 
-Every signal on a page (custom spans, errors, HTTP) is nested under that
-page's pageload/navigation root span, so opening the trace in Uptrace shows one
-tree with everything in it. Uptrace stores one root span per trace, so signals are
-attached as children rather than as separate roots. Each interaction is therefore
-sent as its own Sentry transaction — you will see multiple transaction envelopes
-for one page in the Network tab; in Uptrace they appear as one nested tree.
+The app sends every signal exactly as the Sentry SDK would send it — it never
+re-parents a span. The browser-tracing integration opens one trace per
+pageload/navigation, and each later interaction inherits that trace from the
+current scope. Because the pageload transaction has usually ended by the time you
+click something, those interactions are **root spans of their own** rather than
+children.
+
+So one page's trace holds several sibling roots — the pageload, plus a root span
+per interaction:
+
+```
+trace 9f2c…                     (one trace)
+├── /                           pageload
+├── created todo: buy milk
+├── completed todo: buy milk
+└── GET /api/ok
+    └── http.client             (a real child: the fetch happens inside the span)
+```
+
+This is the shape Sentry itself produces. Each interaction arrives as its own
+transaction envelope, so you will see several in the Network tab for a single page.
 
 ## Prerequisites
 
@@ -104,8 +119,9 @@ DSN key/project).
 npm test
 ```
 
-Two specs, covering only what is Uptrace-specific: every signal nests under one
-root span per trace, and each navigation mints a trace named by its route pattern.
+Three specs, covering only what is Uptrace-specific: interactions are sibling root
+spans sharing one trace, each navigation mints a trace named by its route pattern,
+and the trace badge names the trace the app is really sending on.
 They intercept the Sentry envelopes in the browser and read them, so no Sentry
 credentials and no running Uptrace are needed — `playwright.config.ts` gives the
 test dev server a dummy DSN (the SDK is inert without one) and ignores your `.env`.

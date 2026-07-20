@@ -42,17 +42,26 @@ behavior changes, update it in the same change.
 - Each control fires an explicit Sentry signal and leaves a breadcrumb; keep both
   going for new controls. The signals are: Todos (a `created todo` span on add, a
   back-dated `completed todo` span on Done), HTTP (`/api/ok|slow|fail` → a
-  `GET /api/…` span nested under the page root, wrapping the SDK's auto-instrumented
+  `GET /api/…` root span wrapping the SDK's auto-instrumented
   `http.client` span; Fail also captures an error), and Errors (one exception per
   button — the home panel uses fixed types, each sub-route its own named errors).
   The not-found route auto-reports a `PageNotFound` error when shown. Document any
   new control in the README.
 - Hard rule: never call `Sentry.startNewTrace()` — the trace comes only from the
   browser-tracing integration (a pageload trace on load, a navigation trace on each
-  route change). Every signal attaches to the current trace **nested under the
-  page's root span** (via `startSpan`/`startInactiveSpan` with `parentSpan` +
-  `forceTransaction`, wired in `telemetry.ts`), because Uptrace renders only one
-  root span per trace — sibling roots would be dropped from the trace tree.
+  route change). That rule is what keeps a page on **one** trace.
+- Equally hard rule: never re-parent a span. No `parentSpan`, no `forceTransaction`,
+  no page-root bookkeeping fed back into the SDK. Every signal is sent exactly as the
+  Sentry SDK would send it and inherits the current trace from the scope, so an
+  interaction that happens after the pageload transaction has ended is its own **root
+  span** on that trace. One trace holding several sibling roots is the intended shape
+  — it is what Sentry does, and Uptrace's trace view is expected to render it. An
+  earlier version nested everything under the page root to work around that; it was
+  removed deliberately, so do not reintroduce it.
+- A span may still have a child where the nesting is real: `sendRequest` wraps its
+  `fetch` in a `GET /api/…` span, and the SDK's auto-instrumented `http.client` span
+  nests under it because the request genuinely happens inside it. That is ordinary
+  SDK behavior, not re-parenting.
 - TypeScript with `strict` on. JS/TS comments use `//` line comments, including
   comments for exported types and functions. Comment only what the code cannot say.
 - Order code top-down, as the Go backend does: module doc, imports, package-level
@@ -72,8 +81,9 @@ behavior changes, update it in the same change.
 - `npm install`
 - `npm run dev` — local dev server.
 - `npm run build` — type-check (`tsc -b`) and production build.
-- `npm test` — two Playwright specs, guarding only what is Uptrace-specific: single-
-  root trace nesting, and route-pattern trace naming. They read the intercepted Sentry
+- `npm test` — Playwright specs guarding only what is Uptrace-specific: interactions
+  are sibling root spans on one trace, route-pattern trace naming, and the trace badge
+  naming the trace actually being sent on. They read the intercepted Sentry
   envelopes, so no credentials and no running Uptrace are needed: `playwright.config.ts`
   gives the test dev server a dummy DSN and ignores your `.env`, keeping them green on
   a fresh clone. Keep it that way — the SDK is inert without a DSN (no spans, no trace

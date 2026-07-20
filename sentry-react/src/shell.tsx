@@ -1,9 +1,8 @@
 // The persistent app frame: route nav on the left, current-trace badge above the
 // routed content, inspector pinned to the bottom.
-import { useSyncExternalStore } from 'react'
 import type { ReactNode } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
-import { getPageTraceId, subscribePageTrace, uptraceUrl } from './telemetry'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { getPageTraceId, uptraceUrl } from './telemetry'
 import { useSettledDelivery } from './delivery'
 import { Inspector } from './inspector'
 
@@ -62,7 +61,10 @@ function NavBar() {
 // TraceBadge names the current page's trace, and links to it only once some envelope
 // has reached Uptrace: a check that the connection works, not that this trace landed.
 function TraceBadge() {
-  const traceId = useSyncExternalStore(subscribePageTrace, getPageTraceId)
+  // useLocation re-renders this on every navigation, which is exactly when the SDK
+  // swaps in the new trace — so the id below is re-read at the right moments.
+  useLocation()
+  const traceId = getPageTraceId()
   const settled = useSettledDelivery()
   const url = uptraceUrl(traceId)
 
