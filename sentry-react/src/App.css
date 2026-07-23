@@ -1,0 +1,447 @@
+/* App.css — warm, single-column layout in the todo-app style. The design tokens
+   (paper / ink / accent / ...) live in index.css; this file only composes them. */
+
+.shell {
+  max-width: 58rem;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 5vh, 3rem) 1.25rem 6rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+/* Two columns: the nav sidebar and the main content column. */
+.layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Nav ------------------------------------------------------------------- */
+
+.nav {
+  flex: none;
+  width: 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  position: sticky;
+  top: 1.5rem;
+}
+
+.nav__link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 7px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background 0.15s var(--ease);
+}
+
+.nav__link:hover {
+  background: var(--raised);
+}
+
+.nav__link.active {
+  background: var(--accent-ghost);
+}
+
+.nav__name {
+  font-size: 0.9rem;
+  font-weight: 560;
+}
+
+.nav__link.active .nav__name {
+  color: var(--accent-strong);
+}
+
+.nav__path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+/* Status bar: trace badge + delivery ------------------------------------ */
+
+.statusbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  margin-top: 0;
+  padding: 0.7rem 0.9rem;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+}
+
+/* Masthead + routed content --------------------------------------------- */
+
+.content {
+  margin-top: 1.25rem;
+}
+
+.tagline {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* Panels: flat sections divided by hairlines, not repeated cards --------- */
+
+.panels {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.5rem;
+}
+
+.panel {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.panel:first-child {
+  border-top: none;
+  padding-top: 0.5rem;
+}
+
+.panel h2 {
+  margin: 0 0 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+.panel p {
+  margin: 0 0 0.85rem;
+  color: var(--faint);
+  font-size: 0.85rem;
+}
+
+.hint {
+  margin: 0.85rem 0 0;
+  font-size: 0.8rem;
+  color: var(--faint);
+}
+
+.hint code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.panel__actions input {
+  flex: 1;
+  min-width: 11rem;
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+
+.panel__actions input::placeholder {
+  color: var(--faint);
+}
+
+.panel__actions input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ghost);
+}
+
+/* Todo list ------------------------------------------------------------- */
+
+.todos {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  /* Grow with the viewport but stop before HTTP/Errors would slide under the fixed
+     last-signal bar, then scroll inside the list. The offset is everything else in
+     the column (trace badge, Todos header/input, HTTP, Errors, inspector). */
+  max-height: max(6rem, calc(100dvh - 38rem));
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.todo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--line);
+  animation: enter 0.2s var(--ease);
+}
+
+.todo:first-child {
+  border-top: none;
+}
+
+.todo__text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+}
+
+.todo__link {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 1.35rem;
+  line-height: 1;
+  padding: 0.3rem 0.5rem;
+  border-radius: 7px;
+  transition: background 0.15s var(--ease);
+}
+
+.todo__link:hover {
+  background: var(--accent-ghost);
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Buttons --------------------------------------------------------------- */
+
+.btn {
+  padding: 0.55rem 0.95rem;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 560;
+  color: var(--ink);
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color 0.15s var(--ease), background 0.15s var(--ease),
+    border-color 0.15s var(--ease), transform 0.08s var(--ease);
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: transparent;
+}
+
+.btn-danger {
+  color: var(--danger);
+  background: transparent;
+  border-color: var(--danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger-tint);
+  border-color: var(--danger);
+}
+
+/* Trace badge ----------------------------------------------------------- */
+
+.trace-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.trace-badge__label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.trace-badge__id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: var(--ink);
+}
+
+.trace-badge__cta {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.trace-badge__cta:hover {
+  text-decoration: underline;
+}
+
+/* Delivery status ------------------------------------------------------- */
+
+.delivery {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.delivery__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--faint);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--faint) 16%, transparent);
+}
+
+.delivery[data-state='ok'] .delivery__dot {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ok) 18%, transparent);
+}
+
+.delivery[data-state='failed'] .delivery__dot {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--danger) 18%, transparent);
+}
+
+.delivery[data-state='sending'] .delivery__dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ghost);
+}
+
+/* Inspector: fixed "last signal" bar with a kind-colored dot ------------- */
+
+.inspector {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  width: min(40rem, calc(100% - 2rem));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px oklch(0.27 0.018 60 / 0.12);
+  --signal: var(--accent);
+}
+
+/* A todo and an HTTP request are both spans in Uptrace, so they share one color. */
+.inspector[data-kind='span'],
+.inspector[data-kind='http'] {
+  --signal: var(--ok);
+}
+
+.inspector[data-kind='error'] {
+  --signal: var(--danger);
+}
+
+.inspector[data-kind='none'] {
+  --signal: var(--faint);
+}
+
+.inspector__label {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.inspector__label::before {
+  content: '';
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.4rem;
+  border-radius: 999px;
+  background: var(--signal);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--signal) 18%, transparent);
+}
+
+.inspector__signal {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.inspector .delivery {
+  flex: none;
+  font-size: 0.76rem;
+}
+
+.inspector__kind {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  color: var(--signal);
+  background: color-mix(in oklch, var(--signal) 12%, transparent);
+}
+
+.inspector__link {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.inspector__link:hover {
+  text-decoration: underline;
+}
+
+.inspector__text {
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.inspector__empty {
+  color: var(--faint);
+  font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

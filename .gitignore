@@ -19,5 +19,7 @@ go-zero/go-zero
 db.sqlite3
 gorm.db
 
+**/docs/superpowers/
+
 # Misc
 .DS_Store
